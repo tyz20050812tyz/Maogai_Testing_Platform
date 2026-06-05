@@ -1,0 +1,20 @@
+[
+  {
+    "id": "dagong-2023-kaifaqu-maogai-jikao",
+    "name": "大工2023开发区毛概机考题",
+    "source": "大工2023开发区毛概机考题.pdf",
+    "path": "data/exam_banks/dagong-2023-kaifaqu-maogai-jikao.json"
+  },
+  {
+    "id": "dagong-maogai-jifang-moni-1",
+    "name": "大工毛概机房模拟题截图版(1)",
+    "source": "大工毛概机房模拟题截图版(1).pdf",
+    "path": "data/exam_banks/dagong-maogai-jifang-moni-1.json"
+  },
+  {
+    "id": "dagong-maogai-jifang-moni-new",
+    "name": "大工毛概机房模拟题截图版新版",
+    "source": "大工毛概机房模拟题截图版新版.pdf",
+    "path": "data/exam_banks/dagong-maogai-jifang-moni-new.json"
+  }
+]

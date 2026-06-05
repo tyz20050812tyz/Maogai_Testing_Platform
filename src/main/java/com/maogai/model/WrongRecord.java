@@ -4,6 +4,7 @@ public class WrongRecord {
     private int id;
     private int questionId;
     private String bank;
+    private String examBank;
     private long timestamp;
 
     public WrongRecord() {}
@@ -13,9 +14,14 @@ public class WrongRecord {
     }
 
     public WrongRecord(int id, int questionId, String bank, long timestamp) {
+        this(id, questionId, bank, "", timestamp);
+    }
+
+    public WrongRecord(int id, int questionId, String bank, String examBank, long timestamp) {
         this.id = id;
         this.questionId = questionId;
         this.bank = bank;
+        this.examBank = examBank;
         this.timestamp = timestamp;
     }
 
@@ -27,6 +33,9 @@ public class WrongRecord {
 
     public String getBank() { return bank; }
     public void setBank(String bank) { this.bank = bank; }
+
+    public String getExamBank() { return examBank; }
+    public void setExamBank(String examBank) { this.examBank = examBank; }
 
     public long getTimestamp() { return timestamp; }
     public void setTimestamp(long timestamp) { this.timestamp = timestamp; }

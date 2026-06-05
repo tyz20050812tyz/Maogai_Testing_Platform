@@ -33,6 +33,10 @@ public class ImportService {
     }
 
     public Map<String, Object> importText(String text, int defaultChapter, String bank) {
+        return importText(text, defaultChapter, bank, null);
+    }
+
+    public Map<String, Object> importText(String text, int defaultChapter, String bank, String examBank) {
         Map<String, Object> result = new HashMap<>();
 
         if (text == null || text.trim().isEmpty()) {
@@ -43,7 +47,7 @@ public class ImportService {
 
         // 检测是否为JSON格式
         if (text.trim().startsWith("[") || text.trim().startsWith("{")) {
-            return importJson(text, defaultChapter, bank);
+            return importJson(text, defaultChapter, bank, examBank);
         }
 
         // 使用AI解析文本
@@ -56,7 +60,7 @@ public class ImportService {
             return result;
         }
 
-        int count = questionService.addQuestions(bank, parsed);
+        int count = questionService.addQuestions(bank, examBank, parsed);
         result.put("success", true);
         result.put("message", "成功导入 " + count + " 道题目");
         result.put("count", count);
@@ -74,6 +78,10 @@ public class ImportService {
     }
 
     private Map<String, Object> importJson(String json, int defaultChapter, String bank) {
+        return importJson(json, defaultChapter, bank, null);
+    }
+
+    private Map<String, Object> importJson(String json, int defaultChapter, String bank, String examBank) {
         Map<String, Object> result = new HashMap<>();
 
         try {
@@ -96,7 +104,7 @@ public class ImportService {
                 }
             }
 
-            int count = questionService.addQuestions(bank, questions);
+            int count = questionService.addQuestions(bank, examBank, questions);
             result.put("success", true);
             result.put("message", "成功从JSON导入 " + count + " 道题目");
             result.put("count", count);
@@ -117,6 +125,10 @@ public class ImportService {
     }
 
     public Map<String, Object> importImage(Part filePart, String bank) {
+        return importImage(filePart, bank, null);
+    }
+
+    public Map<String, Object> importImage(Part filePart, String bank, String examBank) {
         Map<String, Object> result = new HashMap<>();
 
         try {
@@ -147,7 +159,7 @@ public class ImportService {
                 return result;
             }
 
-            int count = questionService.addQuestions(bank, parsed);
+            int count = questionService.addQuestions(bank, examBank, parsed);
             result.put("success", true);
             result.put("message", "图片识别成功，导入 " + count + " 道题目");
             result.put("count", count);
@@ -172,6 +184,10 @@ public class ImportService {
     }
 
     public Map<String, Object> importFile(Part filePart, int defaultChapter, String bank) {
+        return importFile(filePart, defaultChapter, bank, null);
+    }
+
+    public Map<String, Object> importFile(Part filePart, int defaultChapter, String bank, String examBank) {
         Map<String, Object> result = new HashMap<>();
 
         try {
@@ -179,7 +195,7 @@ public class ImportService {
             String fileName = getFileName(filePart);
 
             if (fileName != null && fileName.toLowerCase().endsWith(".json")) {
-                return importJson(content, defaultChapter, bank);
+                return importJson(content, defaultChapter, bank, examBank);
             }
 
             // 文本文件使用AI解析
@@ -191,7 +207,7 @@ public class ImportService {
                 return result;
             }
 
-            int count = questionService.addQuestions(bank, parsed);
+            int count = questionService.addQuestions(bank, examBank, parsed);
             result.put("success", true);
             result.put("message", "成功从文件导入 " + count + " 道题目");
             result.put("count", count);

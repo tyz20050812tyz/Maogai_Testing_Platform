@@ -26,17 +26,21 @@ public class QuizServlet extends HttpServlet {
         QuestionService service = ServiceFactory.getQuestionService();
         WrongBookService wrongBookService = ServiceFactory.getWrongBookService();
         String bank = service.normalizeBank(req.getParameter("bank"));
+        String examBank = service.normalizeExamBank(req.getParameter("examBank"));
 
-        if ("/list".equals(pathInfo)) {
+        if ("/exam-banks".equals(pathInfo)) {
+            writeJson(resp, service.getExamBanks());
+
+        } else if ("/list".equals(pathInfo)) {
             String chapterStr = req.getParameter("chapter");
             String type = req.getParameter("type");
             Integer chapter = (chapterStr != null && !chapterStr.isEmpty()) ? Integer.parseInt(chapterStr) : null;
-            List<Question> list = service.filter(bank, chapter, type);
+            List<Question> list = service.filter(bank, examBank, chapter, type);
 
             List<Map<String, Object>> result = new ArrayList<>();
             for (Question q : list) {
-                Map<String, Object> map = questionToMap(q, bank);
-                map.put("inWrongBook", wrongBookService.isInWrongBook(bank, q.getId()));
+                Map<String, Object> map = questionToMap(q, bank, examBank);
+                map.put("inWrongBook", wrongBookService.isInWrongBook(bank, examBank, q.getId()));
                 result.add(map);
             }
             writeJson(resp, result);
@@ -50,30 +54,32 @@ public class QuizServlet extends HttpServlet {
             }
             List<Question> list;
             if (chapterStr != null && !chapterStr.isEmpty()) {
-                list = service.randomPickByChapter(bank, Integer.parseInt(chapterStr), count);
+                list = service.randomPickByChapter(bank, examBank, Integer.parseInt(chapterStr), count);
             } else {
-                list = service.randomPick(bank, count);
+                list = service.randomPick(bank, examBank, count);
             }
             List<Map<String, Object>> result = new ArrayList<>();
             for (Question q : list) {
-                result.add(questionToMap(q, bank));
+                result.add(questionToMap(q, bank, examBank));
             }
             writeJson(resp, result);
 
         } else if ("/stats".equals(pathInfo)) {
-            Map<String, Object> stats = service.getStats(bank);
+            Map<String, Object> stats = req.getParameter("examBank") == null
+                    ? service.getStats(bank)
+                    : service.getStats(bank, examBank);
             stats.put("wrongCount", wrongBookService.getCount());
             writeJson(resp, stats);
 
         } else if ("/question".equals(pathInfo)) {
             String idStr = req.getParameter("id");
             if (idStr != null) {
-                Question q = service.getById(bank, Integer.parseInt(idStr));
+                Question q = service.getById(bank, examBank, Integer.parseInt(idStr));
                 if (q != null) {
-                    Map<String, Object> map = questionToMap(q, bank);
-                    map.put("nextId", service.getNextId(bank, q.getId()));
-                    map.put("prevId", service.getPrevId(bank, q.getId()));
-                    map.put("inWrongBook", wrongBookService.isInWrongBook(bank, q.getId()));
+                    Map<String, Object> map = questionToMap(q, bank, examBank);
+                    map.put("nextId", service.getNextId(bank, examBank, q.getId()));
+                    map.put("prevId", service.getPrevId(bank, examBank, q.getId()));
+                    map.put("inWrongBook", wrongBookService.isInWrongBook(bank, examBank, q.getId()));
                     writeJson(resp, map);
                 } else {
                     writeError(resp, "题目不存在");
@@ -98,12 +104,13 @@ public class QuizServlet extends HttpServlet {
             String body = readBody(req);
             Map<String, Object> params = JsonUtil.fromJson(body, Map.class);
             String bank = service.normalizeBank((String) params.get("bank"));
+            String examBank = service.normalizeExamBank((String) params.get("examBank"));
             Question question = JsonUtil.fromJson(body, Question.class);
             if (question == null) {
                 writeError(resp, "无效的题目数据");
                 return;
             }
-            Question saved = service.addQuestion(bank, question);
+            Question saved = service.addQuestion(bank, examBank, question);
             Map<String, Object> result = new HashMap<>();
             result.put("success", true);
             result.put("message", "添加成功");
@@ -115,9 +122,10 @@ public class QuizServlet extends HttpServlet {
             Map<String, Object> params = JsonUtil.fromJson(body, Map.class);
             int questionId = ((Double) params.get("questionId")).intValue();
             String bank = service.normalizeBank((String) params.get("bank"));
+            String examBank = service.normalizeExamBank((String) params.get("examBank"));
             String userAnswer = (String) params.get("answer");
 
-            Question question = service.getById(bank, questionId);
+            Question question = service.getById(bank, examBank, questionId);
             if (question == null) {
                 writeError(resp, "题目不存在");
                 return;
@@ -130,9 +138,10 @@ public class QuizServlet extends HttpServlet {
             result.put("correctAnswer", question.getAnswer());
             result.put("explanation", question.getExplanation());
             result.put("bank", bank);
+            result.put("examBank", examBank);
 
             if (!correct) {
-                wrongBookService.addWrong(bank, questionId);
+                wrongBookService.addWrong(bank, examBank, questionId);
             }
 
             writeJson(resp, result);
@@ -142,7 +151,8 @@ public class QuizServlet extends HttpServlet {
             Map<String, Object> params = JsonUtil.fromJson(body, Map.class);
             int questionId = ((Double) params.get("questionId")).intValue();
             String bank = service.normalizeBank((String) params.get("bank"));
-            wrongBookService.addWrong(bank, questionId);
+            String examBank = service.normalizeExamBank((String) params.get("examBank"));
+            wrongBookService.addWrong(bank, examBank, questionId);
             Map<String, Object> result = new HashMap<>();
             result.put("success", true);
             result.put("message", "已加入错题本");
@@ -153,7 +163,8 @@ public class QuizServlet extends HttpServlet {
             Map<String, Object> params = JsonUtil.fromJson(body, Map.class);
             int questionId = ((Double) params.get("questionId")).intValue();
             String bank = service.normalizeBank((String) params.get("bank"));
-            wrongBookService.removeWrong(bank, questionId);
+            String examBank = service.normalizeExamBank((String) params.get("examBank"));
+            wrongBookService.removeWrong(bank, examBank, questionId);
             Map<String, Object> result = new HashMap<>();
             result.put("success", true);
             result.put("message", "已从错题本移除");
@@ -164,10 +175,13 @@ public class QuizServlet extends HttpServlet {
         }
     }
 
-    private Map<String, Object> questionToMap(Question q, String bank) {
+    private Map<String, Object> questionToMap(Question q, String bank, String examBank) {
         Map<String, Object> map = new HashMap<>();
         map.put("id", q.getId());
         map.put("bank", bank);
+        if (QuestionService.BANK_EXAM.equals(bank)) {
+            map.put("examBank", examBank);
+        }
         map.put("chapter", q.getChapter());
         map.put("type", q.getType());
         map.put("question", q.getQuestion());

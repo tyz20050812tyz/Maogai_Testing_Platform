@@ -46,7 +46,8 @@ public class WrongBookServlet extends HttpServlet {
             Map<String, Object> params = parseBody(req);
             int questionId = ((Double) params.get("questionId")).intValue();
             String bank = questionService.normalizeBank((String) params.get("bank"));
-            service.addWrong(bank, questionId);
+            String examBank = questionService.normalizeExamBank((String) params.get("examBank"));
+            service.addWrong(bank, examBank, questionId);
             Map<String, Object> result = new HashMap<>();
             result.put("success", true);
             result.put("message", "已加入错题本");
@@ -56,7 +57,8 @@ public class WrongBookServlet extends HttpServlet {
             Map<String, Object> params = parseBody(req);
             int questionId = ((Double) params.get("questionId")).intValue();
             String bank = questionService.normalizeBank((String) params.get("bank"));
-            boolean removed = service.removeWrong(bank, questionId);
+            String examBank = questionService.normalizeExamBank((String) params.get("examBank"));
+            boolean removed = service.removeWrong(bank, examBank, questionId);
             Map<String, Object> result = new HashMap<>();
             result.put("success", removed);
             result.put("message", removed ? "已从错题本移除" : "移除失败");

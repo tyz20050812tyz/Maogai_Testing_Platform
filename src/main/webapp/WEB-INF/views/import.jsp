@@ -25,6 +25,9 @@
             <label style="margin-right:10px;" id="import-chapter-wrap">目标章节：
                 <select id="import-chapter"></select>
             </label>
+            <label style="margin-right:10px;" id="import-exam-bank-wrap">考试题库文件：
+                <select id="import-exam-bank"></select>
+            </label>
         </div>
         <textarea id="import-text-input" class="import-textarea" placeholder="在此粘贴题库文本或 JSON 数据..."></textarea>
         <div style="margin-top:12px;">
@@ -45,6 +48,9 @@
             </label>
             <label style="margin-right:10px;" id="import-chapter-file-wrap">目标章节：
                 <select id="import-chapter-file"></select>
+            </label>
+            <label style="margin-right:10px;" id="import-exam-bank-file-wrap">考试题库文件：
+                <select id="import-exam-bank-file"></select>
             </label>
         </div>
         <form id="file-upload-form" enctype="multipart/form-data">
@@ -70,6 +76,9 @@
             <label style="margin-right:10px;" id="import-chapter-image-wrap">目标章节：
                 <select id="import-chapter-image"></select>
             </label>
+            <label style="margin-right:10px;" id="import-exam-bank-image-wrap">考试题库文件：
+                <select id="import-exam-bank-image"></select>
+            </label>
         </div>
         <div class="import-upload-zone" onclick="document.getElementById('image-input').click()">
             <div style="font-size:2em;">图片</div>
@@ -85,17 +94,22 @@
 AI.init('${pageContext.request.contextPath}');
 Quiz.init('${pageContext.request.contextPath}');
 Quiz.loadChapterOptions(['import-chapter', 'import-chapter-file', 'import-chapter-image'], '1', false);
+Quiz.loadExamBankOptions(['import-exam-bank', 'import-exam-bank-file', 'import-exam-bank-image'], '');
 
 function updateImportChapterVisibility() {
     [
-        ['import-bank', 'import-chapter-wrap'],
-        ['import-bank-file', 'import-chapter-file-wrap'],
-        ['import-bank-image', 'import-chapter-image-wrap']
+        ['import-bank', 'import-chapter-wrap', 'import-exam-bank-wrap'],
+        ['import-bank-file', 'import-chapter-file-wrap', 'import-exam-bank-file-wrap'],
+        ['import-bank-image', 'import-chapter-image-wrap', 'import-exam-bank-image-wrap']
     ].forEach(function(pair) {
         var bankSelect = document.getElementById(pair[0]);
         var chapterWrap = document.getElementById(pair[1]);
+        var examBankWrap = document.getElementById(pair[2]);
         if (bankSelect && chapterWrap) {
             chapterWrap.style.display = bankSelect.value === 'chapter' ? '' : 'none';
+        }
+        if (bankSelect && examBankWrap) {
+            examBankWrap.style.display = bankSelect.value === 'exam' ? '' : 'none';
         }
     });
 }
@@ -109,10 +123,12 @@ function uploadFileToServer() {
 
     var chapter = document.getElementById('import-chapter-file').value;
     var bank = document.getElementById('import-bank-file').value;
+    var examBank = document.getElementById('import-exam-bank-file').value;
     var formData = new FormData();
     formData.append('file', file);
     formData.append('chapter', chapter);
     formData.append('bank', bank);
+    formData.append('examBank', examBank);
 
     var resultDiv = document.getElementById('file-result');
     resultDiv.innerHTML = '<div class="loading-state">正在上传解析...</div>';
@@ -141,8 +157,11 @@ function uploadImageToServer(input) {
     var imageChapter = document.getElementById('import-chapter-image');
     var textBank = document.getElementById('import-bank');
     var imageBank = document.getElementById('import-bank-image');
+    var textExamBank = document.getElementById('import-exam-bank');
+    var imageExamBank = document.getElementById('import-exam-bank-image');
     if (textChapter && imageChapter) textChapter.value = imageChapter.value;
     if (textBank && imageBank) textBank.value = imageBank.value;
+    if (textExamBank && imageExamBank) textExamBank.value = imageExamBank.value;
 
     var originalResult = document.getElementById('import-result');
     var imageResult = document.getElementById('image-result');

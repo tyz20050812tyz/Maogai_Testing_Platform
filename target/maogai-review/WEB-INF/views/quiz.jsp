@@ -7,6 +7,10 @@
     <div class="filter-bar">
         <a class="btn btn-small btn-primary" id="exam-bank-link" href="${pageContext.request.contextPath}/page/quiz?bank=exam">考试题库</a>
         <a class="btn btn-small btn-outline" id="chapter-bank-link" href="${pageContext.request.contextPath}/page/quiz?bank=chapter">章节题库</a>
+        <span class="exam-bank-filter">题库文件</span>
+        <select id="filter-exam-bank" class="exam-bank-filter" onchange="applyFilter()">
+            <option value="">加载中...</option>
+        </select>
         <span class="chapter-filter-label">章节</span>
         <select id="filter-chapter" class="chapter-filter-label" onchange="applyFilter()">
             <option value="">全部章节</option>
@@ -29,7 +33,9 @@ var urlParams = new URLSearchParams(window.location.search);
 var initBank = urlParams.get('bank') === 'chapter' ? 'chapter' : 'exam';
 var initChapter = urlParams.get('chapter') || '';
 var initType = urlParams.get('type') || '';
+var initExamBank = urlParams.get('examBank') || '';
 Quiz.setBank(initBank);
+Quiz.setExamBank(initExamBank);
 
 document.getElementById('filter-type').value = initType;
 
@@ -44,16 +50,30 @@ function configureQuizPage() {
     document.querySelectorAll('.chapter-filter-label').forEach(function(el) {
         el.style.display = isChapter ? '' : 'none';
     });
+    document.querySelectorAll('.exam-bank-filter').forEach(function(el) {
+        el.style.display = isChapter ? 'none' : '';
+    });
 }
 
 function applyFilter() {
     var chapter = initBank === 'chapter' ? document.getElementById('filter-chapter').value : '';
     var type = document.getElementById('filter-type').value;
-    Quiz.loadQuestions(chapter, type, 'question-list-container', initBank);
+    var examBank = initBank === 'exam' ? document.getElementById('filter-exam-bank').value : '';
+    Quiz.setExamBank(examBank);
+    Quiz.loadQuestions(chapter, type, 'question-list-container', initBank, examBank);
 }
 
 configureQuizPage();
-Quiz.loadChapterOptions('filter-chapter', initChapter, true, applyFilter);
+Quiz.loadChapterOptions('filter-chapter', initChapter, true, function() {
+    if (initBank === 'chapter') {
+        applyFilter();
+    }
+});
+Quiz.loadExamBankOptions('filter-exam-bank', initExamBank, function() {
+    if (initBank === 'exam') {
+        applyFilter();
+    }
+});
 </script>
 
 <%@ include file="footer.jsp" %>

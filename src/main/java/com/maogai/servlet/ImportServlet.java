@@ -67,6 +67,7 @@ public class ImportServlet extends HttpServlet {
             defaultChapter = Integer.parseInt(chapterParam);
         }
         String bank = ServiceFactory.getQuestionService().normalizeBank(req.getParameter("bank"));
+        String examBank = ServiceFactory.getQuestionService().normalizeExamBank(req.getParameter("examBank"));
 
         Part filePart = req.getPart("file");
         if (filePart == null || filePart.getSize() == 0) {
@@ -79,9 +80,9 @@ public class ImportServlet extends HttpServlet {
 
         // 判断是否为图片文件
         if (isImageFile(fileName)) {
-            result = importService.importImage(filePart, bank);
+            result = importService.importImage(filePart, bank, examBank);
         } else {
-            result = importService.importFile(filePart, defaultChapter, bank);
+            result = importService.importFile(filePart, defaultChapter, bank, examBank);
         }
 
         writeJson(resp, result);
@@ -113,8 +114,9 @@ public class ImportServlet extends HttpServlet {
         int chapter = params.get("chapter") != null
                 ? ((Double) params.get("chapter")).intValue() : 1;
         String bank = ServiceFactory.getQuestionService().normalizeBank((String) params.get("bank"));
+        String examBank = ServiceFactory.getQuestionService().normalizeExamBank((String) params.get("examBank"));
 
-        Map<String, Object> result = importService.importText(text, chapter, bank);
+        Map<String, Object> result = importService.importText(text, chapter, bank, examBank);
         writeJson(resp, result);
     }
 

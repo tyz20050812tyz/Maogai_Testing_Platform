@@ -34,6 +34,10 @@ public class WrongBookService {
                 if (record.getBank() == null || record.getBank().trim().isEmpty()) {
                     record.setBank(QuestionService.BANK_CHAPTER);
                 }
+                if (QuestionService.BANK_EXAM.equals(questionService.normalizeBank(record.getBank()))
+                        && (record.getExamBank() == null || record.getExamBank().trim().isEmpty())) {
+                    record.setExamBank(questionService.normalizeExamBank(null));
+                }
             }
             log.info("加载错题记录 {} 条", records.size());
         } catch (Exception e) {
@@ -46,12 +50,14 @@ public class WrongBookService {
         List<Map<String, Object>> result = new ArrayList<>();
         for (WrongRecord record : records) {
             String bank = questionService.normalizeBank(record.getBank());
-            Question question = questionService.getById(bank, record.getQuestionId());
+            String examBank = normalizeRecordExamBank(bank, record.getExamBank());
+            Question question = questionService.getById(bank, examBank, record.getQuestionId());
             if (question != null) {
                 Map<String, Object> map = new HashMap<>();
                 map.put("id", record.getId());
                 map.put("questionId", record.getQuestionId());
                 map.put("bank", bank);
+                map.put("examBank", examBank);
                 map.put("timestamp", record.getTimestamp());
                 map.put("question", question);
                 result.add(map);
@@ -65,25 +71,33 @@ public class WrongBookService {
     }
 
     public synchronized WrongRecord addWrong(String bank, int questionId) {
+        return addWrong(bank, null, questionId);
+    }
+
+    public synchronized WrongRecord addWrong(String bank, String examBank, int questionId) {
         String normalizedBank = questionService.normalizeBank(bank);
+        String normalizedExamBank = normalizeRecordExamBank(normalizedBank, examBank);
         boolean exists = records.stream()
                 .anyMatch(r -> r.getQuestionId() == questionId
-                        && normalizedBank.equals(questionService.normalizeBank(r.getBank())));
+                        && normalizedBank.equals(questionService.normalizeBank(r.getBank()))
+                        && normalizedExamBank.equals(normalizeRecordExamBank(normalizedBank, r.getExamBank())));
         if (exists) {
             records.stream()
                     .filter(r -> r.getQuestionId() == questionId
-                            && normalizedBank.equals(questionService.normalizeBank(r.getBank())))
+                            && normalizedBank.equals(questionService.normalizeBank(r.getBank()))
+                            && normalizedExamBank.equals(normalizeRecordExamBank(normalizedBank, r.getExamBank())))
                     .findFirst()
                     .ifPresent(r -> r.setTimestamp(System.currentTimeMillis()));
         } else {
             int newId = records.isEmpty() ? 1 :
                     records.stream().mapToInt(WrongRecord::getId).max().orElse(0) + 1;
-            records.add(new WrongRecord(newId, questionId, normalizedBank, System.currentTimeMillis()));
+            records.add(new WrongRecord(newId, questionId, normalizedBank, normalizedExamBank, System.currentTimeMillis()));
         }
         saveRecords();
         return records.stream()
                 .filter(r -> r.getQuestionId() == questionId
-                        && normalizedBank.equals(questionService.normalizeBank(r.getBank())))
+                        && normalizedBank.equals(questionService.normalizeBank(r.getBank()))
+                        && normalizedExamBank.equals(normalizeRecordExamBank(normalizedBank, r.getExamBank())))
                 .findFirst()
                 .orElse(null);
     }
@@ -93,9 +107,15 @@ public class WrongBookService {
     }
 
     public synchronized boolean removeWrong(String bank, int questionId) {
+        return removeWrong(bank, null, questionId);
+    }
+
+    public synchronized boolean removeWrong(String bank, String examBank, int questionId) {
         String normalizedBank = questionService.normalizeBank(bank);
+        String normalizedExamBank = normalizeRecordExamBank(normalizedBank, examBank);
         boolean removed = records.removeIf(r -> r.getQuestionId() == questionId
-                && normalizedBank.equals(questionService.normalizeBank(r.getBank())));
+                && normalizedBank.equals(questionService.normalizeBank(r.getBank()))
+                && normalizedExamBank.equals(normalizeRecordExamBank(normalizedBank, r.getExamBank())));
         if (removed) saveRecords();
         return removed;
     }
@@ -105,9 +125,15 @@ public class WrongBookService {
     }
 
     public boolean isInWrongBook(String bank, int questionId) {
+        return isInWrongBook(bank, null, questionId);
+    }
+
+    public boolean isInWrongBook(String bank, String examBank, int questionId) {
         String normalizedBank = questionService.normalizeBank(bank);
+        String normalizedExamBank = normalizeRecordExamBank(normalizedBank, examBank);
         return records.stream().anyMatch(r -> r.getQuestionId() == questionId
-                && normalizedBank.equals(questionService.normalizeBank(r.getBank())));
+                && normalizedBank.equals(questionService.normalizeBank(r.getBank()))
+                && normalizedExamBank.equals(normalizeRecordExamBank(normalizedBank, r.getExamBank())));
     }
 
     public int getCount() {
@@ -127,5 +153,12 @@ public class WrongBookService {
         } catch (Exception e) {
             log.error("保存错题记录失败", e);
         }
+    }
+
+    private String normalizeRecordExamBank(String bank, String examBank) {
+        if (!QuestionService.BANK_EXAM.equals(questionService.normalizeBank(bank))) {
+            return "";
+        }
+        return questionService.normalizeExamBank(examBank);
     }
 }

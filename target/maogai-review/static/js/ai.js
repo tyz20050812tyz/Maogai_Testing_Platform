@@ -76,6 +76,7 @@ var AI = {
         var textarea = document.getElementById('import-text-input');
         var chapterSelect = document.getElementById('import-chapter');
         var bankSelect = document.getElementById('import-bank');
+        var examBankSelect = document.getElementById('import-exam-bank');
         if (!textarea) return;
 
         var text = textarea.value.trim();
@@ -86,6 +87,7 @@ var AI = {
 
         var chapter = chapterSelect ? parseInt(chapterSelect.value, 10) : 1;
         var bank = bankSelect ? bankSelect.value : 'chapter';
+        var examBank = examBankSelect ? examBankSelect.value : '';
         var resultDiv = document.getElementById('import-result');
         if (resultDiv) resultDiv.innerHTML = '<div class="loading-state">正在解析题库...</div>';
 
@@ -93,7 +95,7 @@ var AI = {
         fetch(this.ctx + '/api/ai/parse', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: text, chapter: chapter, bank: bank })
+            body: JSON.stringify({ text: text, chapter: chapter, bank: bank, examBank: examBank })
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
@@ -156,9 +158,11 @@ var AI = {
         var textarea = document.getElementById('import-text-input');
         var chapterSelect = document.getElementById('import-chapter');
         var bankSelect = document.getElementById('import-bank');
+        var examBankSelect = document.getElementById('import-exam-bank');
         var text = textarea && textarea.value.trim() ? textarea.value.trim() : JSON.stringify(this._parsedQuestions);
         var chapter = chapterSelect ? parseInt(chapterSelect.value, 10) : 1;
         var bank = bankSelect ? bankSelect.value : 'chapter';
+        var examBank = examBankSelect ? examBankSelect.value : '';
         var resultDiv = this._lastResultContainer || document.getElementById('import-result');
         if (resultDiv) resultDiv.innerHTML = '<div class="loading-state">正在导入题库...</div>';
 
@@ -166,7 +170,7 @@ var AI = {
         fetch(this.ctx + '/api/import/upload', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: text, chapter: chapter, bank: bank })
+            body: JSON.stringify({ text: text, chapter: chapter, bank: bank, examBank: examBank })
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
@@ -203,13 +207,15 @@ var AI = {
             var base64 = e.target.result.split(',')[1];
             var chapterSelect = document.getElementById('import-chapter');
             var bankSelect = document.getElementById('import-bank');
+            var examBankSelect = document.getElementById('import-exam-bank');
             var chapter = chapterSelect ? parseInt(chapterSelect.value, 10) : 1;
             var bank = bankSelect ? bankSelect.value : 'chapter';
+            var examBank = examBankSelect ? examBankSelect.value : '';
 
             fetch(self.ctx + '/api/ai/parse', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ image: base64, chapter: chapter, bank: bank })
+                body: JSON.stringify({ image: base64, chapter: chapter, bank: bank, examBank: examBank })
             })
             .then(function(r) { return r.json(); })
             .then(function(data) {

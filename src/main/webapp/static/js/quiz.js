@@ -4,10 +4,13 @@
 var Quiz = {
     ctx: '',
     bank: 'exam',
+    examBank: '',
     _randomQuestions: [],
     _randomIndex: 0,
     _randomScore: 0,
     _randomAnswered: 0,
+    _randomBank: 'exam',
+    _randomExamBank: '',
 
     init: function(ctx) {
         this.ctx = ctx || '';
@@ -15,6 +18,10 @@ var Quiz = {
 
     setBank: function(bank) {
         this.bank = bank === 'chapter' ? 'chapter' : 'exam';
+    },
+
+    setExamBank: function(examBank) {
+        this.examBank = examBank || this.examBank || '';
     },
 
     loadChapterOptions: function(selectIds, selectedValue, includeAll, callback) {
@@ -56,6 +63,48 @@ var Quiz = {
             });
     },
 
+    loadExamBankOptions: function(selectIds, selectedValue, callback) {
+        var ids = Array.isArray(selectIds) ? selectIds : [selectIds];
+        var self = this;
+
+        fetch(this.ctx + '/api/quiz/exam-banks')
+            .then(function(r) { return r.json(); })
+            .then(function(banks) {
+                var firstId = '';
+                ids.forEach(function(id) {
+                    var select = document.getElementById(id);
+                    if (!select) return;
+
+                    var html = '';
+                    if (Array.isArray(banks)) {
+                        banks.forEach(function(bank, index) {
+                            if (index === 0) firstId = bank.id || '';
+                            var label = (bank.name || bank.id || '考试题库') + '（' + (bank.count || 0) + '题）';
+                            html += '<option value="' + self.escapeHtml(bank.id) + '">' + self.escapeHtml(label) + '</option>';
+                        });
+                    }
+                    select.innerHTML = html || '<option value="">暂无考试题库文件</option>';
+                    select.value = selectedValue || firstId || select.value;
+                });
+
+                self.examBank = selectedValue || firstId || self.examBank || '';
+                if (typeof callback === 'function') {
+                    callback(banks || []);
+                }
+            })
+            .catch(function() {
+                ids.forEach(function(id) {
+                    var select = document.getElementById(id);
+                    if (select && !select.options.length) {
+                        select.innerHTML = '<option value="">题库文件加载失败</option>';
+                    }
+                });
+                if (typeof callback === 'function') {
+                    callback([]);
+                }
+            });
+    },
+
     escapeHtml: function(value) {
         return String(value == null ? '' : value)
             .replace(/&/g, '&amp;')
@@ -71,30 +120,48 @@ var Quiz = {
         return '判断题';
     },
 
+    bankParams: function(bank, examBank) {
+        bank = bank || this.bank || 'exam';
+        examBank = examBank || this.examBank || '';
+        var params = ['bank=' + encodeURIComponent(bank)];
+        if (bank === 'exam' && examBank) {
+            params.push('examBank=' + encodeURIComponent(examBank));
+        }
+        return params;
+    },
+
+    requestBody: function(bank, examBank, data) {
+        var body = data || {};
+        body.bank = bank || this.bank || 'exam';
+        if (body.bank === 'exam') {
+            body.examBank = examBank || this.examBank || '';
+        }
+        return body;
+    },
+
     setLoading: function(container, text) {
         if (container) {
             container.innerHTML = '<div class="loading-state">' + this.escapeHtml(text || '正在加载...') + '</div>';
         }
     },
 
-    loadQuestions: function(chapter, type, containerId, bank) {
+    loadQuestions: function(chapter, type, containerId, bank, examBank) {
         bank = bank || this.bank || 'exam';
+        examBank = examBank || this.examBank || '';
         var container = document.getElementById(containerId);
         this.setLoading(container, '正在加载题目...');
 
-        var url = this.ctx + '/api/quiz/list';
-        var params = ['bank=' + encodeURIComponent(bank)];
+        var params = this.bankParams(bank, examBank);
         if (chapter) params.push('chapter=' + encodeURIComponent(chapter));
         if (type) params.push('type=' + encodeURIComponent(type));
-        if (params.length > 0) url += '?' + params.join('&');
 
         var self = this;
-        fetch(url)
+        fetch(this.ctx + '/api/quiz/list?' + params.join('&'))
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (Array.isArray(data)) {
                     self.renderQuestionList(data, containerId);
-                } else {
+                } else if (container) {
                     container.innerHTML = '<div class="empty-state">暂时没有匹配的题目</div>';
                 }
             })
@@ -120,7 +187,8 @@ var Quiz = {
                 indexText: '第 ' + (index + 1) + ' 题',
                 name: 'q-' + q.id,
                 actions: true,
-                bank: q.bank || bank
+                bank: q.bank || self.bank,
+                examBank: q.examBank || self.examBank
             });
         });
         container.innerHTML = html;
@@ -129,7 +197,8 @@ var Quiz = {
     renderQuestionCard: function(q, options) {
         options = options || {};
         var bank = options.bank || q.bank || this.bank || 'exam';
-        var html = '<div class="question-card" id="q-' + q.id + '" data-type="' + this.escapeHtml(q.type) + '" data-bank="' + this.escapeHtml(bank) + '">';
+        var examBank = options.examBank || q.examBank || this.examBank || '';
+        var html = '<div class="question-card" id="q-' + q.id + '" data-type="' + this.escapeHtml(q.type) + '" data-bank="' + this.escapeHtml(bank) + '" data-exam-bank="' + this.escapeHtml(examBank) + '">';
         html += '  <div class="question-header">';
         html += '    <span class="question-type type-' + this.escapeHtml(q.type) + '">' + this.typeLabel(q.type) + '</span>';
         html += '    <span class="quiz-counter">' + this.escapeHtml(options.indexText || '') + '</span>';
@@ -187,6 +256,7 @@ var Quiz = {
         var card = document.getElementById('q-' + questionId);
         if (!card) return;
         var bank = card.getAttribute('data-bank') || this.bank || 'exam';
+        var examBank = card.getAttribute('data-exam-bank') || this.examBank || '';
 
         var answer = this.getAnswerFromCard(card, 'q-' + questionId);
         if (!answer) {
@@ -198,7 +268,7 @@ var Quiz = {
         fetch(this.ctx + '/api/quiz/check', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ bank: bank, questionId: questionId, answer: answer })
+            body: JSON.stringify(this.requestBody(bank, examBank, { questionId: questionId, answer: answer }))
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
@@ -248,13 +318,14 @@ var Quiz = {
         var isInWrong = btn.getAttribute('data-wrong') === 'true';
         var card = btn.closest('.question-card');
         var bank = card ? (card.getAttribute('data-bank') || this.bank || 'exam') : (this.bank || 'exam');
+        var examBank = card ? (card.getAttribute('data-exam-bank') || this.examBank || '') : (this.examBank || '');
         var url = this.ctx + '/api/quiz/' + (isInWrong ? 'remove-wrong' : 'wrong');
 
         btn.disabled = true;
         fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ bank: bank, questionId: questionId })
+            body: JSON.stringify(this.requestBody(bank, examBank, { questionId: questionId }))
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
@@ -273,26 +344,26 @@ var Quiz = {
         });
     },
 
-    randomQuiz: function(chapter, count, containerId, bank) {
+    randomQuiz: function(chapter, count, containerId, bank, examBank) {
         bank = bank || this.bank || 'exam';
+        examBank = examBank || this.examBank || '';
         this._randomBank = bank;
+        this._randomExamBank = examBank;
         var container = document.getElementById(containerId);
         this.setLoading(container, '正在抽取题目...');
 
-        var url = this.ctx + '/api/quiz/random';
-        var params = ['bank=' + encodeURIComponent(bank)];
+        var params = this.bankParams(bank, examBank);
         if (count) params.push('count=' + encodeURIComponent(count));
         if (chapter && chapter > 0) params.push('chapter=' + encodeURIComponent(chapter));
-        if (params.length > 0) url += '?' + params.join('&');
 
         var self = this;
-        fetch(url)
+        fetch(this.ctx + '/api/quiz/random?' + params.join('&'))
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (Array.isArray(data) && data.length) {
                     self.renderRandomQuiz(data, containerId);
-                } else {
-                    container.innerHTML = '<div class="empty-state">题库中暂时没有可抽取的题目</div>';
+                } else if (container) {
+                    container.innerHTML = '<div class="empty-state">当前题库文件里暂时没有可抽取的题目</div>';
                 }
             })
             .catch(function() {
@@ -320,7 +391,8 @@ var Quiz = {
         var total = this._randomQuestions.length;
         var idx = this._randomIndex + 1;
         var bank = q.bank || this._randomBank || this.bank || 'exam';
-        var html = '<div class="question-card" id="random-card" data-type="' + this.escapeHtml(q.type) + '" data-bank="' + this.escapeHtml(bank) + '">';
+        var examBank = q.examBank || this._randomExamBank || this.examBank || '';
+        var html = '<div class="question-card" id="random-card" data-type="' + this.escapeHtml(q.type) + '" data-bank="' + this.escapeHtml(bank) + '" data-exam-bank="' + this.escapeHtml(examBank) + '">';
         html += '  <div class="question-header">';
         html += '    <span class="question-type type-' + this.escapeHtml(q.type) + '">' + this.typeLabel(q.type) + '</span>';
         html += '    <span class="quiz-counter">' + idx + ' / ' + total + '</span>';
@@ -355,6 +427,7 @@ var Quiz = {
         var card = document.querySelector('.question-card');
         if (!q || !card) return;
         var bank = card.getAttribute('data-bank') || this._randomBank || this.bank || 'exam';
+        var examBank = card.getAttribute('data-exam-bank') || this._randomExamBank || this.examBank || '';
 
         var answer = this.getAnswerFromCard(card, 'random-q');
         if (!answer) {
@@ -366,7 +439,7 @@ var Quiz = {
         fetch(this.ctx + '/api/quiz/check', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ bank: bank, questionId: q.id, answer: answer })
+            body: JSON.stringify(this.requestBody(bank, examBank, { questionId: q.id, answer: answer }))
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {
@@ -435,26 +508,29 @@ var Quiz = {
         records.forEach(function(record) {
             var q = record.question || {};
             var bank = record.bank || q.bank || 'exam';
+            var examBank = record.examBank || q.examBank || '';
+            var bankLabel = bank === 'chapter' ? '章节题库' : '考试题库';
             html += '<div class="wrong-item">';
             html += '<div class="wrong-item-info">';
             html += '<div class="wrong-item-title">' + self.escapeHtml(q.question || '题目已不存在') + '</div>';
-            html += '<div class="wrong-item-meta">' + (bank === 'chapter' ? '章节题库' : '考试题库') + ' · 正确答案：' + self.escapeHtml(q.answer || '-') + '</div>';
+            html += '<div class="wrong-item-meta">' + bankLabel + (examBank ? ' · ' + self.escapeHtml(examBank) : '') + ' · 正确答案：' + self.escapeHtml(q.answer || '-') + '</div>';
             html += '</div>';
             html += '<div class="wrong-item-actions">';
-            html += '<button class="btn btn-outline btn-small" onclick="Quiz.removeWrong(' + q.id + ', \'' + bank + '\')">移除</button>';
+            html += '<button class="btn btn-outline btn-small" onclick="Quiz.removeWrong(' + q.id + ', \'' + self.escapeHtml(bank) + '\', \'' + self.escapeHtml(examBank) + '\')">移除</button>';
             html += '</div>';
             html += '</div>';
         });
         container.innerHTML = html;
     },
 
-    removeWrong: function(questionId, bank) {
+    removeWrong: function(questionId, bank, examBank) {
         bank = bank || this.bank || 'exam';
+        examBank = examBank || this.examBank || '';
         var self = this;
         fetch(this.ctx + '/api/wrong/remove', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ bank: bank, questionId: questionId })
+            body: JSON.stringify(this.requestBody(bank, examBank, { questionId: questionId }))
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {

@@ -39,7 +39,7 @@
 
     <div class="import-tab-panel" id="tab-file" style="display:none;">
         <div class="import-section">
-            <p style="margin-bottom:10px;color:#666;font-size:0.9em;">支持上传 .txt 或 .json 文件。</p>
+            <p style="margin-bottom:10px;color:#666;font-size:0.9em;">支持上传 .txt / .json / .pdf 文件。</p>
             <label style="margin-right:10px;">目标题库：
                 <select id="import-bank-file" onchange="updateImportChapterVisibility()">
                     <option value="chapter">章节题库</option>
@@ -57,9 +57,9 @@
             <div class="import-upload-zone" onclick="document.getElementById('file-input').click()">
                 <div style="font-size:2em;">文件</div>
                 <p>点击选择文件或拖拽到此处</p>
-                <p style="font-size:0.8em;">支持 .txt / .json</p>
+                <p style="font-size:0.8em;">支持 .txt / .json / .pdf</p>
             </div>
-            <input type="file" id="file-input" name="file" accept=".txt,.json" style="display:none" onchange="uploadFileToServer()">
+            <input type="file" id="file-input" name="file" accept=".txt,.json,.pdf,application/pdf" style="display:none" onchange="uploadFileToServer()">
         </form>
         <div id="file-result"></div>
     </div>
@@ -140,8 +140,12 @@ function uploadFileToServer() {
     .then(function(r) { return r.json(); })
     .then(function(data) {
         if (data.success) {
+            var jsonPreview = data.questions ? '<details style="margin-top:12px"><summary style="cursor:pointer;color:#667085">查看标准 JSON</summary><pre style="background:#f8fafc;padding:10px;border-radius:8px;margin-top:8px;white-space:pre-wrap;font-size:0.86rem;">' + Quiz.escapeHtml(JSON.stringify(data.questions, null, 2)) + '</pre></details>' : '';
+            var rawPreview = data.rawText ? '<details style="margin-top:12px"><summary style="cursor:pointer;color:#667085">查看 PDF 提取文本</summary><pre style="background:#f8fafc;padding:10px;border-radius:8px;margin-top:8px;white-space:pre-wrap;font-size:0.86rem;">' + Quiz.escapeHtml(data.rawText) + '</pre></details>' : '';
             resultDiv.innerHTML = '<div class="import-result success">' +
                 '<p>成功导入 <strong>' + data.count + '</strong> 道题目。</p>' +
+                jsonPreview +
+                rawPreview +
                 '</div>';
         } else {
             resultDiv.innerHTML = '<div class="import-result error">导入失败：' + (data.message || '未知错误') + '</div>';

@@ -1,7 +1,8 @@
 package com.maogai.service;
 
 import com.maogai.model.Question;
-import com.maogai.util.FileUtil;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -191,14 +192,18 @@ public class ImportService {
         Map<String, Object> result = new HashMap<>();
 
         try {
-            String content = readPartAsString(filePart);
             String fileName = getFileName(filePart);
 
             if (fileName != null && fileName.toLowerCase().endsWith(".json")) {
+                String content = readPartAsString(filePart);
                 return importJson(content, defaultChapter, bank, examBank);
             }
 
-            // 文本文件使用AI解析
+            if (fileName != null && fileName.toLowerCase().endsWith(".pdf")) {
+                return importPdf(filePart, defaultChapter, bank, examBank);
+            }
+
+            String content = readPartAsString(filePart);
             List<Question> parsed = aiService.parseQuestionText(content, defaultChapter);
 
             if (parsed.isEmpty()) {
@@ -221,6 +226,64 @@ public class ImportService {
         }
 
         return result;
+    }
+
+    private Map<String, Object> importPdf(Part filePart, int defaultChapter, String bank, String examBank) {
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            String fileName = getFileName(filePart);
+            String content = extractPdfText(filePart);
+            if (content == null || content.trim().isEmpty()) {
+                result.put("success", false);
+                result.put("message", "这个 PDF 没有可直接提取的文字，可能是截图版或扫描版 PDF，需要先做 OCR 识别。");
+                result.put("mode", "pdf");
+                result.put("fileName", fileName);
+                return result;
+            }
+
+            List<Question> parsed = aiService.parseQuestionText(content, defaultChapter);
+            if (parsed.isEmpty()) {
+                result.put("success", false);
+                result.put("message", "PDF 文本已提取，但没有识别出有效题目。请检查 PDF 中是否包含题干、选项和答案。");
+                result.put("mode", "pdf");
+                result.put("fileName", fileName);
+                result.put("rawText", trimPreview(content));
+                return result;
+            }
+
+            int count = questionService.addQuestions(bank, examBank, parsed);
+            result.put("success", true);
+            result.put("message", "成功从 PDF 解析并导入 " + count + " 道题目");
+            result.put("mode", "pdf");
+            result.put("fileName", fileName);
+            result.put("count", count);
+            result.put("questions", parsed);
+            result.put("rawText", trimPreview(content));
+
+            log.info("PDF导入: {} -> 提取 {} 字，解析 {} 道题目", fileName, content.length(), count);
+        } catch (Exception e) {
+            log.error("PDF导入失败", e);
+            result.put("success", false);
+            result.put("message", "PDF 处理失败: " + e.getMessage());
+        }
+
+        return result;
+    }
+
+    private String extractPdfText(Part filePart) throws IOException {
+        try (InputStream is = filePart.getInputStream();
+             PDDocument document = PDDocument.load(is)) {
+            PDFTextStripper stripper = new PDFTextStripper();
+            stripper.setSortByPosition(true);
+            return stripper.getText(document);
+        }
+    }
+
+    private String trimPreview(String text) {
+        if (text == null) return "";
+        String trimmed = text.trim();
+        return trimmed.length() > 5000 ? trimmed.substring(0, 5000) + "\n..." : trimmed;
     }
 
     private String readPartAsString(Part part) throws IOException {

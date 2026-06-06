@@ -21,6 +21,7 @@
             <a data-path="/page/quiz" href="${pageContext.request.contextPath}/page/quiz">题库练习</a>
             <a data-path="/page/random" href="${pageContext.request.contextPath}/page/random">随机测试</a>
             <a data-path="/page/wrong" href="${pageContext.request.contextPath}/page/wrong">错题本</a>
+            <a data-path="/page/flashcards" href="${pageContext.request.contextPath}/page/flashcards">速记</a>
             <a data-path="/page/ai" href="${pageContext.request.contextPath}/page/ai">AI答疑</a>
             <a data-path="/page/import" href="${pageContext.request.contextPath}/page/import">题目导入</a>
             <a data-path="/page/stats" href="${pageContext.request.contextPath}/page/stats">统计</a>

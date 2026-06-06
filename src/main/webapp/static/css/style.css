@@ -1011,6 +1011,119 @@ textarea {
     margin-top: 10px;
 }
 
+/* ===== Mastery & Flashcards ===== */
+.section-heading-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.mastery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.mastery-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 128px;
+    padding: 15px;
+    border: 1px solid var(--line);
+    border-left: 6px solid #cbd5e1;
+    border-radius: 8px;
+    color: var(--text);
+    text-decoration: none;
+    background: #fff;
+    transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.mastery-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+.mastery-item span,
+.mastery-item small {
+    color: var(--muted);
+}
+
+.mastery-red {
+    border-left-color: #dc2626;
+    background: #fff7f7;
+}
+
+.mastery-yellow {
+    border-left-color: #d97706;
+    background: #fffbeb;
+}
+
+.mastery-green {
+    border-left-color: #16a34a;
+    background: #f0fdf4;
+}
+
+.mastery-empty {
+    border-left-color: #94a3b8;
+    background: #f8fafc;
+}
+
+#home-mastery-suggestion a,
+#stats-mastery-suggestion a {
+    color: var(--red);
+    font-weight: 900;
+}
+
+.flashcard-box {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    width: 100%;
+    min-height: 280px;
+    padding: 28px;
+    border: 1px solid rgba(20, 35, 65, 0.12);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--text);
+    text-align: left;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+}
+
+.flashcard-box strong {
+    font-size: 1.05rem;
+    color: var(--red);
+}
+
+.flashcard-box > span:last-child {
+    font-size: 1.2rem;
+    line-height: 1.8;
+    font-weight: 800;
+}
+
+.flashcard-tag {
+    display: inline-flex;
+    width: fit-content;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: #eef2ff;
+    color: #3730a3;
+    font-size: 0.82rem;
+    font-weight: 800;
+}
+
+.ai-explain-btn {
+    margin-top: 12px;
+}
+
+.ai-explanation {
+    border-left: 4px solid var(--teal);
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 860px) {
     .hero-panel {

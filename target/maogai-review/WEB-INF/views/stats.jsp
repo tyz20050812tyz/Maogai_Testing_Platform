@@ -29,6 +29,12 @@
 </div>
 
 <div class="card">
+    <h2 class="card-title">章节掌握度地图</h2>
+    <p class="section-subtitle" id="stats-mastery-suggestion">根据做题记录计算正确率，低于 60% 标红。</p>
+    <div id="stats-mastery-map"></div>
+</div>
+
+<div class="card">
     <h2 class="card-title">章节题库分布</h2>
     <table class="stats-table" id="chapter-stats-table">
         <thead>
@@ -42,6 +48,7 @@
 
 <script>
 Quiz.init('${pageContext.request.contextPath}');
+Quiz.loadMasteryMap('stats-mastery-map', 'stats-mastery-suggestion');
 
 Promise.all([
     fetch(Quiz.ctx + '/api/quiz/stats?bank=exam').then(function(r) { return r.json(); }),

@@ -309,8 +309,38 @@ var Quiz = {
         if (data.explanation) {
             html += '<div class="explanation-box">' + this.escapeHtml(data.explanation) + '</div>';
         }
+        if (!data.correct) {
+            var bank = card.getAttribute('data-bank') || this.bank || 'exam';
+            var examBank = card.getAttribute('data-exam-bank') || this.examBank || '';
+            html += '<div id="ai-explain-' + questionId + '"></div>';
+        }
 
         resultDiv.innerHTML = html;
+        if (!data.correct) {
+            this.explainWrongAnswer(questionId, bank, examBank, userAnswer, 'ai-explain-' + questionId);
+        }
+    },
+
+    explainWrongAnswer: function(questionId, bank, examBank, answer, containerId) {
+        var container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = '<div class="loading-state">AI正在分析错因...</div>';
+        fetch(this.ctx + '/api/quiz/explain', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(this.requestBody(bank, examBank, { questionId: questionId, answer: answer }))
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                container.innerHTML = '<div class="explanation-box ai-explanation">' + Quiz.escapeHtml(data.explanation || '').replace(/\n/g, '<br>') + '</div>';
+            } else {
+                container.innerHTML = '<div class="empty-state">' + Quiz.escapeHtml(data.message || 'AI解释失败') + '</div>';
+            }
+        })
+        .catch(function() {
+            container.innerHTML = '<div class="empty-state">AI解释失败，请稍后重试</div>';
+        });
     },
 
     toggleWrong: function(questionId, btn) {
@@ -454,7 +484,13 @@ var Quiz = {
                 if (data.explanation) {
                     html += '<div class="explanation-box">' + self.escapeHtml(data.explanation) + '</div>';
                 }
+                if (!data.correct) {
+                    html += '<div id="random-ai-explain"></div>';
+                }
                 resultDiv.innerHTML = html;
+                if (!data.correct) {
+                    self.explainWrongAnswer(q.id, bank, examBank, answer, 'random-ai-explain');
+                }
             }
 
             card.querySelectorAll('input').forEach(function(input) {
@@ -464,8 +500,46 @@ var Quiz = {
             setTimeout(function() {
                 self._randomIndex++;
                 self.renderSingleRandomQuestion(card.parentElement);
-            }, 1200);
+            }, data.correct ? 1200 : 6500);
         });
+    },
+
+    loadMasteryMap: function(containerId, suggestionId) {
+        var container = document.getElementById(containerId);
+        if (!container) return;
+        this.setLoading(container, '正在计算掌握度...');
+        fetch(this.ctx + '/api/quiz/mastery')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                var chapters = data.chapters || [];
+                if (!chapters.length) {
+                    container.innerHTML = '<div class="empty-state">暂无章节掌握度数据</div>';
+                    return;
+                }
+                var html = '<div class="mastery-grid">';
+                chapters.forEach(function(item) {
+                    var level = item.level || 'empty';
+                    var label = level === 'green' ? '稳' : level === 'yellow' ? '补' : level === 'red' ? '弱' : '未练';
+                    html += '<a class="mastery-item mastery-' + level + '" href="' + Quiz.ctx + '/page/quiz?bank=chapter&chapter=' + item.chapter + '">';
+                    html += '<strong>' + Quiz.escapeHtml(item.title) + '</strong>';
+                    html += '<span>' + label + ' · 正确率 ' + (item.attempts ? item.accuracy + '%' : '暂无') + '</span>';
+                    html += '<small>已答 ' + (item.attempts || 0) + ' / 题库 ' + (item.questionTotal || 0) + '</small>';
+                    html += '</a>';
+                });
+                html += '</div>';
+                container.innerHTML = html;
+
+                if (suggestionId) {
+                    var suggestionEl = document.getElementById(suggestionId);
+                    var suggestion = data.suggestion;
+                    if (suggestionEl && suggestion) {
+                        suggestionEl.innerHTML = '今天建议复习：<a href="' + Quiz.ctx + '/page/quiz?bank=chapter&chapter=' + suggestion.chapter + '">' + Quiz.escapeHtml(suggestion.title) + '</a>';
+                    }
+                }
+            })
+            .catch(function() {
+                container.innerHTML = '<div class="empty-state">掌握度加载失败，请稍后重试</div>';
+            });
     },
 
     showRandomScore: function(container) {

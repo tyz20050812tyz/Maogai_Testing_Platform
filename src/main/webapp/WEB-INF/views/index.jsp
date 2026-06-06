@@ -24,6 +24,17 @@
 </section>
 
 <div class="card">
+    <div class="section-heading-row">
+        <div>
+            <h2 class="card-title">章节掌握度地图</h2>
+            <p class="section-subtitle" id="home-mastery-suggestion">正在生成今日复习建议...</p>
+        </div>
+        <a href="${pageContext.request.contextPath}/page/stats" class="btn btn-outline btn-small">查看统计</a>
+    </div>
+    <div id="home-mastery-map"></div>
+</div>
+
+<div class="card">
     <h2 class="card-title">考试题库概览</h2>
     <div class="dashboard">
         <div class="stat-card">
@@ -87,6 +98,13 @@
                 <div class="stat-label">汇总两套题库错题</div>
             </div>
         </a>
+        <a href="${pageContext.request.contextPath}/page/flashcards" class="quick-link">
+            <div class="quick-link-icon">记</div>
+            <div>
+                <strong>速记卡片</strong>
+                <div class="stat-label">碎片时间抽认知识点</div>
+            </div>
+        </a>
         <a href="${pageContext.request.contextPath}/page/import" class="quick-link">
             <div class="quick-link-icon">导</div>
             <div>
@@ -127,5 +145,10 @@
         </div>
     </div>
 </div>
+
+<script>
+Quiz.init('${pageContext.request.contextPath}');
+Quiz.loadMasteryMap('home-mastery-map', 'home-mastery-suggestion');
+</script>
 
 <%@ include file="footer.jsp" %>

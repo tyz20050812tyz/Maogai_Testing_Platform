@@ -41,6 +41,16 @@
         <url-pattern>/api/outline/*</url-pattern>
     </servlet-mapping>
 
+    <!-- 速记卡片Servlet -->
+    <servlet>
+        <servlet-name>FlashcardServlet</servlet-name>
+        <servlet-class>com.maogai.servlet.FlashcardServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>FlashcardServlet</servlet-name>
+        <url-pattern>/api/flashcards/*</url-pattern>
+    </servlet-mapping>
+
     <!-- 题库Servlet -->
     <servlet>
         <servlet-name>QuizServlet</servlet-name>

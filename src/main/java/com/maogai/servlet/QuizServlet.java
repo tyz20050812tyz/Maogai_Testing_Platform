@@ -31,6 +31,9 @@ public class QuizServlet extends HttpServlet {
         if ("/exam-banks".equals(pathInfo)) {
             writeJson(resp, service.getExamBanks());
 
+        } else if ("/mastery".equals(pathInfo)) {
+            writeJson(resp, ServiceFactory.getAnswerStatsService().getChapterMastery());
+
         } else if ("/list".equals(pathInfo)) {
             String chapterStr = req.getParameter("chapter");
             String type = req.getParameter("type");
@@ -139,11 +142,29 @@ public class QuizServlet extends HttpServlet {
             result.put("explanation", question.getExplanation());
             result.put("bank", bank);
             result.put("examBank", examBank);
+            ServiceFactory.getAnswerStatsService().record(bank, examBank, question, userAnswer, correct);
 
             if (!correct) {
                 wrongBookService.addWrong(bank, examBank, questionId);
             }
 
+            writeJson(resp, result);
+
+        } else if ("/explain".equals(pathInfo)) {
+            String body = readBody(req);
+            Map<String, Object> params = JsonUtil.fromJson(body, Map.class);
+            int questionId = ((Double) params.get("questionId")).intValue();
+            String bank = service.normalizeBank((String) params.get("bank"));
+            String examBank = service.normalizeExamBank((String) params.get("examBank"));
+            String userAnswer = (String) params.get("answer");
+            Question question = service.getById(bank, examBank, questionId);
+            if (question == null) {
+                writeError(resp, "题目不存在");
+                return;
+            }
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", true);
+            result.put("explanation", ServiceFactory.getAIService().explainWrongAnswer(question, userAnswer));
             writeJson(resp, result);
 
         } else if ("/wrong".equals(pathInfo)) {

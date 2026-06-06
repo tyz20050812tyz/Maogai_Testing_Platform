@@ -1,6 +1,7 @@
 com\maogai\servlet\ImportServlet.class
 com\maogai\servlet\OutlineServlet.class
 com\maogai\service\ImportService$1.class
+com\maogai\servlet\FlashcardServlet.class
 com\maogai\servlet\QuizServlet.class
 com\maogai\servlet\PageServlet.class
 com\maogai\servlet\WrongBookServlet.class
@@ -8,12 +9,16 @@ com\maogai\util\DocxUtil.class
 com\maogai\service\AIService.class
 com\maogai\service\OutlineService.class
 com\maogai\util\CharacterEncodingFilter.class
+com\maogai\model\Flashcard.class
 com\maogai\servlet\AIServlet.class
+com\maogai\service\FlashcardService.class
+com\maogai\model\AnswerRecord.class
 com\maogai\model\Chapter.class
 com\maogai\util\FileUtil.class
 com\maogai\util\JsonUtil.class
 com\maogai\model\WrongRecord.class
 com\maogai\service\WrongBookService.class
+com\maogai\service\AnswerStatsService.class
 com\maogai\servlet\IndexServlet.class
 com\maogai\service\ServiceFactory.class
 com\maogai\service\QuestionService.class

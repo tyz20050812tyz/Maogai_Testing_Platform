@@ -183,6 +183,44 @@ public class AIService {
         return result;
     }
 
+    public String explainWrongAnswer(Question question, String userAnswer) {
+        if (question == null) {
+            return "题目不存在，暂时无法解释错因。";
+        }
+        if ("mock".equalsIgnoreCase(serviceType)) {
+            return mockWrongAnswerExplanation(question, userAnswer);
+        }
+
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("请用适合大学生复习《毛概》的方式解释这道选择题为什么答错。");
+        prompt.append("要求：1. 先指出学生选了什么、正确答案是什么；");
+        prompt.append("2. 分析正确选项为什么对；3. 简要说明学生选项为什么容易混淆；");
+        prompt.append("4. 结尾给一句记忆提示。不要编造教材外信息。\n\n");
+        prompt.append("题干：").append(question.getQuestion()).append("\n");
+        prompt.append("选项：\n");
+        if (question.getOptions() != null) {
+            for (String option : question.getOptions()) {
+                prompt.append(option).append("\n");
+            }
+        }
+        prompt.append("学生答案：").append(userAnswer == null ? "" : userAnswer).append("\n");
+        prompt.append("正确答案：").append(question.getAnswer()).append("\n");
+        prompt.append("原解析：").append(question.getExplanation() == null ? "" : question.getExplanation());
+        return customApiAsk(prompt.toString());
+    }
+
+    private String mockWrongAnswerExplanation(Question question, String userAnswer) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("你选的是 ").append(userAnswer == null || userAnswer.isBlank() ? "空" : userAnswer)
+                .append("，正确答案是 ").append(question.getAnswer()).append("。\n");
+        sb.append("这道题要抓住题干里的关键词：").append(question.getQuestion()).append("\n");
+        if (question.getExplanation() != null && !question.getExplanation().isBlank()) {
+            sb.append("原解析已经给出关键依据：").append(question.getExplanation()).append("\n");
+        }
+        sb.append("复习时建议把“时间、会议、理论成果、历史地位”这类固定搭配一起记，政治选择题很爱考这种对应关系。");
+        return sb.toString();
+    }
+
     private Question parseSingleBlock(String block, int defaultChapter) {
         if (block == null || block.length() < 5) return null;
 

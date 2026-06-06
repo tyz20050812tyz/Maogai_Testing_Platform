@@ -30,5 +30,29 @@
     "source": "毛概试卷2.json",
     "path": "data/exam_banks/毛概试卷2.json",
     "description": "大连理工大学毛概试卷2"
+  },{
+    "id": "dagong-maogai-jifang-2023",
+    "name": "毛概试卷3",
+    "source": "毛概试卷3.json",
+    "path": "data/exam_banks/毛概试卷3.json",
+    "description": "大连理工大学毛概试卷3"
+  },{
+    "id": "dagong-maogai-jifang-2023",
+    "name": "毛概试卷",
+    "source": "毛概试卷.json",
+    "path": "data/exam_banks/毛概试卷.json",
+    "description": "大连理工大学毛概试卷"
+  },{
+    "id": "dagong-maogai-jifang-2023",
+    "name": "毛概题库",
+    "source": "毛概题库.json",
+    "path": "data/exam_banks/毛概题库.json",
+    "description": "大连理工大学毛概题库"
+  },{
+    "id": "dagong-maogai-jifang-2023",
+    "name": "毛概选择题",
+    "source": "毛概选择题.json",
+    "path": "data/exam_banks/毛概选择题.json",
+    "description": "大连理工大学毛概选择题"
   }
 ]

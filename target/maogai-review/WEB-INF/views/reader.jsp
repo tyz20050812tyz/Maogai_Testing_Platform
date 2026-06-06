@@ -23,7 +23,8 @@ Quiz.init('${pageContext.request.contextPath}');
 
 var params = new URLSearchParams(window.location.search);
 var chapterId = params.get('id');
-var highlightKey = chapterId ? 'chapter-highlight-' + chapterId : '';
+var currentUserKey = '${currentUserKey}';
+var highlightKey = chapterId ? 'chapter-highlight-' + currentUserKey + '-' + chapterId : '';
 var originalChapterHtml = '';
 var savedHighlightRange = null;
 

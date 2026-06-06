@@ -132,6 +132,19 @@ canvas {
     background: rgba(255, 255, 255, 0.14);
 }
 
+.user-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 34px;
+    padding: 7px 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff7ed;
+    font-size: 0.84rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
 /* ===== Layout ===== */
 .main-content {
     max-width: 1200px;
@@ -969,6 +982,64 @@ canvas {
     color: #991b1b;
 }
 
+.login-card {
+    max-width: 920px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.login-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 0.82fr);
+    gap: 18px;
+}
+
+.login-form {
+    display: grid;
+    gap: 14px;
+    align-content: start;
+    padding: 18px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+}
+
+.login-form h3 {
+    font-size: 1rem;
+    color: var(--ink);
+}
+
+.login-form label {
+    display: grid;
+    gap: 8px;
+    color: var(--ink);
+    font-weight: 800;
+}
+
+.login-form input {
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--ink);
+}
+
+.login-form input:focus {
+    outline: 3px solid rgba(185, 28, 28, 0.12);
+    border-color: rgba(185, 28, 28, 0.55);
+}
+
+.login-note {
+    margin-top: 16px;
+    padding-bottom: 0;
+}
+
+.sms-code-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+}
+
 .import-preview-question {
     padding: 11px 12px;
     margin: 7px 0;
@@ -1325,6 +1396,15 @@ canvas {
         gap: 6px;
         width: 100%;
         margin-right: 0 !important;
+    }
+
+    .login-grid,
+    .sms-code-row {
+        grid-template-columns: 1fr;
+    }
+
+    .login-form {
+        padding: 14px;
     }
 
     .chat-bubble {

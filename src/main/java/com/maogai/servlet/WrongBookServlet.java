@@ -2,6 +2,7 @@ package com.maogai.servlet;
 
 import com.maogai.service.QuestionService;
 import com.maogai.service.ServiceFactory;
+import com.maogai.service.UserService;
 import com.maogai.service.WrongBookService;
 import com.maogai.util.JsonUtil;
 
@@ -22,9 +23,10 @@ public class WrongBookServlet extends HttpServlet {
             throws ServletException, IOException {
         String pathInfo = req.getPathInfo();
         WrongBookService service = ServiceFactory.getWrongBookService();
+        String userKey = ServiceFactory.getUserService().currentUserKey(req);
 
         if ("/list".equals(pathInfo)) {
-            List<Map<String, Object>> list = service.getWrongList();
+            List<Map<String, Object>> list = service.getWrongList(userKey);
             Map<String, Object> result = new HashMap<>();
             result.put("success", true);
             result.put("count", list.size());
@@ -41,13 +43,14 @@ public class WrongBookServlet extends HttpServlet {
         String pathInfo = req.getPathInfo();
         WrongBookService service = ServiceFactory.getWrongBookService();
         QuestionService questionService = ServiceFactory.getQuestionService();
+        String userKey = ServiceFactory.getUserService().currentUserKey(req);
 
         if ("/add".equals(pathInfo)) {
             Map<String, Object> params = parseBody(req);
             int questionId = ((Double) params.get("questionId")).intValue();
             String bank = questionService.normalizeBank((String) params.get("bank"));
             String examBank = questionService.normalizeExamBank((String) params.get("examBank"));
-            service.addWrong(bank, examBank, questionId);
+            service.addWrong(userKey, bank, examBank, questionId);
             Map<String, Object> result = new HashMap<>();
             result.put("success", true);
             result.put("message", "已加入错题本");
@@ -58,14 +61,14 @@ public class WrongBookServlet extends HttpServlet {
             int questionId = ((Double) params.get("questionId")).intValue();
             String bank = questionService.normalizeBank((String) params.get("bank"));
             String examBank = questionService.normalizeExamBank((String) params.get("examBank"));
-            boolean removed = service.removeWrong(bank, examBank, questionId);
+            boolean removed = service.removeWrong(userKey, bank, examBank, questionId);
             Map<String, Object> result = new HashMap<>();
             result.put("success", removed);
             result.put("message", removed ? "已从错题本移除" : "移除失败");
             writeJson(resp, result);
 
         } else if ("/clear".equals(pathInfo)) {
-            service.clear();
+            service.clear(userKey);
             Map<String, Object> result = new HashMap<>();
             result.put("success", true);
             result.put("message", "错题本已清空");

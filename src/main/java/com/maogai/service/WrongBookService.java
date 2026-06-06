@@ -7,6 +7,8 @@ import com.maogai.util.JsonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -15,40 +17,23 @@ import java.util.Map;
 public class WrongBookService {
 
     private static final Logger log = LoggerFactory.getLogger(WrongBookService.class);
-    private static final String WRONG_PATH = "data/wrong_book.json";
+    private static final String LEGACY_WRONG_PATH = "data/wrong_book.json";
+    private static final String USER_WRONG_PATH_PATTERN = "data/users/%s/wrong_book.json";
 
-    private List<WrongRecord> records;
+    private final Map<String, List<WrongRecord>> recordsByUser = new HashMap<>();
     private final QuestionService questionService;
 
     public WrongBookService(QuestionService questionService) {
         this.questionService = questionService;
-        loadRecords();
-    }
-
-    private void loadRecords() {
-        try {
-            records = JsonUtil.readList(WRONG_PATH,
-                    TypeToken.getParameterized(List.class, WrongRecord.class).getType());
-            if (records == null) records = new ArrayList<>();
-            for (WrongRecord record : records) {
-                if (record.getBank() == null || record.getBank().trim().isEmpty()) {
-                    record.setBank(QuestionService.BANK_CHAPTER);
-                }
-                if (QuestionService.BANK_EXAM.equals(questionService.normalizeBank(record.getBank()))
-                        && (record.getExamBank() == null || record.getExamBank().trim().isEmpty())) {
-                    record.setExamBank(questionService.normalizeExamBank(null));
-                }
-            }
-            log.info("加载错题记录 {} 条", records.size());
-        } catch (Exception e) {
-            log.warn("错题记录不存在，初始化为空列表");
-            records = new ArrayList<>();
-        }
     }
 
     public List<Map<String, Object>> getWrongList() {
+        return getWrongList(UserService.GUEST_USER);
+    }
+
+    public synchronized List<Map<String, Object>> getWrongList(String userKey) {
         List<Map<String, Object>> result = new ArrayList<>();
-        for (WrongRecord record : records) {
+        for (WrongRecord record : recordsFor(userKey)) {
             String bank = questionService.normalizeBank(record.getBank());
             String examBank = normalizeRecordExamBank(bank, record.getExamBank());
             Question question = questionService.getById(bank, examBank, record.getQuestionId());
@@ -67,14 +52,19 @@ public class WrongBookService {
     }
 
     public synchronized WrongRecord addWrong(int questionId) {
-        return addWrong(QuestionService.BANK_CHAPTER, questionId);
+        return addWrong(UserService.GUEST_USER, QuestionService.BANK_CHAPTER, null, questionId);
     }
 
     public synchronized WrongRecord addWrong(String bank, int questionId) {
-        return addWrong(bank, null, questionId);
+        return addWrong(UserService.GUEST_USER, bank, null, questionId);
     }
 
     public synchronized WrongRecord addWrong(String bank, String examBank, int questionId) {
+        return addWrong(UserService.GUEST_USER, bank, examBank, questionId);
+    }
+
+    public synchronized WrongRecord addWrong(String userKey, String bank, String examBank, int questionId) {
+        List<WrongRecord> records = recordsFor(userKey);
         String normalizedBank = questionService.normalizeBank(bank);
         String normalizedExamBank = normalizeRecordExamBank(normalizedBank, examBank);
         boolean exists = records.stream()
@@ -93,7 +83,7 @@ public class WrongBookService {
                     records.stream().mapToInt(WrongRecord::getId).max().orElse(0) + 1;
             records.add(new WrongRecord(newId, questionId, normalizedBank, normalizedExamBank, System.currentTimeMillis()));
         }
-        saveRecords();
+        saveRecords(userKey);
         return records.stream()
                 .filter(r -> r.getQuestionId() == questionId
                         && normalizedBank.equals(questionService.normalizeBank(r.getBank()))
@@ -103,56 +93,127 @@ public class WrongBookService {
     }
 
     public synchronized boolean removeWrong(int questionId) {
-        return removeWrong(QuestionService.BANK_CHAPTER, questionId);
+        return removeWrong(UserService.GUEST_USER, QuestionService.BANK_CHAPTER, null, questionId);
     }
 
     public synchronized boolean removeWrong(String bank, int questionId) {
-        return removeWrong(bank, null, questionId);
+        return removeWrong(UserService.GUEST_USER, bank, null, questionId);
     }
 
     public synchronized boolean removeWrong(String bank, String examBank, int questionId) {
+        return removeWrong(UserService.GUEST_USER, bank, examBank, questionId);
+    }
+
+    public synchronized boolean removeWrong(String userKey, String bank, String examBank, int questionId) {
+        List<WrongRecord> records = recordsFor(userKey);
         String normalizedBank = questionService.normalizeBank(bank);
         String normalizedExamBank = normalizeRecordExamBank(normalizedBank, examBank);
         boolean removed = records.removeIf(r -> r.getQuestionId() == questionId
                 && normalizedBank.equals(questionService.normalizeBank(r.getBank()))
                 && normalizedExamBank.equals(normalizeRecordExamBank(normalizedBank, r.getExamBank())));
-        if (removed) saveRecords();
+        if (removed) {
+            saveRecords(userKey);
+        }
         return removed;
     }
 
     public boolean isInWrongBook(int questionId) {
-        return isInWrongBook(QuestionService.BANK_CHAPTER, questionId);
+        return isInWrongBook(UserService.GUEST_USER, QuestionService.BANK_CHAPTER, null, questionId);
     }
 
     public boolean isInWrongBook(String bank, int questionId) {
-        return isInWrongBook(bank, null, questionId);
+        return isInWrongBook(UserService.GUEST_USER, bank, null, questionId);
     }
 
     public boolean isInWrongBook(String bank, String examBank, int questionId) {
+        return isInWrongBook(UserService.GUEST_USER, bank, examBank, questionId);
+    }
+
+    public synchronized boolean isInWrongBook(String userKey, String bank, String examBank, int questionId) {
         String normalizedBank = questionService.normalizeBank(bank);
         String normalizedExamBank = normalizeRecordExamBank(normalizedBank, examBank);
-        return records.stream().anyMatch(r -> r.getQuestionId() == questionId
+        return recordsFor(userKey).stream().anyMatch(r -> r.getQuestionId() == questionId
                 && normalizedBank.equals(questionService.normalizeBank(r.getBank()))
                 && normalizedExamBank.equals(normalizeRecordExamBank(normalizedBank, r.getExamBank())));
     }
 
     public int getCount() {
-        return records.size();
+        return getCount(UserService.GUEST_USER);
+    }
+
+    public synchronized int getCount(String userKey) {
+        return recordsFor(userKey).size();
     }
 
     public synchronized void clear() {
-        records.clear();
-        saveRecords();
+        clear(UserService.GUEST_USER);
     }
 
-    private void saveRecords() {
+    public synchronized void clear(String userKey) {
+        recordsFor(userKey).clear();
+        saveRecords(userKey);
+    }
+
+    private List<WrongRecord> recordsFor(String userKey) {
+        String key = UserService.toStorageKey(userKey);
+        return recordsByUser.computeIfAbsent(key, this::loadRecords);
+    }
+
+    private List<WrongRecord> loadRecords(String userKey) {
         try {
-            String classPath = WrongBookService.class.getClassLoader()
-                    .getResource("").getPath();
-            JsonUtil.writeList(classPath + WRONG_PATH, records);
+            return normalizeRecords(JsonUtil.readList(pathForUser(userKey),
+                    TypeToken.getParameterized(List.class, WrongRecord.class).getType()));
         } catch (Exception e) {
-            log.error("保存错题记录失败", e);
+            if (UserService.GUEST_USER.equals(userKey)) {
+                try {
+                    return normalizeRecords(JsonUtil.readList(LEGACY_WRONG_PATH,
+                            TypeToken.getParameterized(List.class, WrongRecord.class).getType()));
+                } catch (Exception ignored) {
+                    // No legacy data either.
+                }
+            }
+            return new ArrayList<>();
         }
+    }
+
+    private List<WrongRecord> normalizeRecords(List<WrongRecord> records) {
+        if (records == null) {
+            records = new ArrayList<>();
+        }
+        for (WrongRecord record : records) {
+            if (record.getBank() == null || record.getBank().trim().isEmpty()) {
+                record.setBank(QuestionService.BANK_CHAPTER);
+            }
+            if (QuestionService.BANK_EXAM.equals(questionService.normalizeBank(record.getBank()))
+                    && (record.getExamBank() == null || record.getExamBank().trim().isEmpty())) {
+                record.setExamBank(questionService.normalizeExamBank(null));
+            }
+        }
+        return records;
+    }
+
+    private void saveRecords(String userKey) {
+        String key = UserService.toStorageKey(userKey);
+        String path = pathForUser(key);
+        List<WrongRecord> records = recordsFor(key);
+        try {
+            URL resource = WrongBookService.class.getClassLoader().getResource("");
+            if (resource != null) {
+                File classRoot = new File(resource.toURI());
+                JsonUtil.writeList(new File(classRoot, path).getPath(), records);
+            }
+
+            String srcPath = System.getProperty("user.dir") +
+                    File.separator + "src" + File.separator + "main" +
+                    File.separator + "resources" + File.separator + path.replace("/", File.separator);
+            JsonUtil.writeList(srcPath, records);
+        } catch (Exception e) {
+            log.error("Failed to save wrong book for user {}", key, e);
+        }
+    }
+
+    private String pathForUser(String userKey) {
+        return String.format(USER_WRONG_PATH_PATTERN, UserService.toStorageKey(userKey));
     }
 
     private String normalizeRecordExamBank(String bank, String examBank) {

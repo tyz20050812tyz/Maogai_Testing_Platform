@@ -24,11 +24,12 @@ public class IndexServlet extends HttpServlet {
         QuestionService questionService = ServiceFactory.getQuestionService();
         OutlineService outlineService = ServiceFactory.getOutlineService();
         WrongBookService wrongBookService = ServiceFactory.getWrongBookService();
+        String userKey = ServiceFactory.getUserService().currentUserKey(req);
 
         Map<String, Object> stats = questionService.getStats();
         req.setAttribute("stats", stats);
         req.setAttribute("chapterList", outlineService.getChapterList());
-        req.setAttribute("wrongCount", wrongBookService.getCount());
+        req.setAttribute("wrongCount", wrongBookService.getCount(userKey));
 
         resp.setContentType("text/html;charset=UTF-8");
         req.getRequestDispatcher("/WEB-INF/views/index.jsp").forward(req, resp);

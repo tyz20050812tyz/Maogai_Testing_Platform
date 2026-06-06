@@ -2,7 +2,6 @@ package com.maogai.service;
 
 import com.google.gson.reflect.TypeToken;
 import com.maogai.model.AnswerRecord;
-import com.maogai.model.Chapter;
 import com.maogai.model.Question;
 import com.maogai.util.JsonUtil;
 import org.slf4j.Logger;
@@ -19,33 +18,24 @@ import java.util.Map;
 public class AnswerStatsService {
 
     private static final Logger log = LoggerFactory.getLogger(AnswerStatsService.class);
-    private static final String ANSWER_RECORDS_PATH = "data/answer_records.json";
+    private static final String LEGACY_ANSWER_RECORDS_PATH = "data/answer_records.json";
+    private static final String USER_ANSWER_RECORDS_PATH_PATTERN = "data/users/%s/answer_records.json";
 
     private final QuestionService questionService;
     private final OutlineService outlineService;
-    private List<AnswerRecord> records;
+    private final Map<String, List<AnswerRecord>> recordsByUser = new HashMap<>();
 
     public AnswerStatsService(QuestionService questionService, OutlineService outlineService) {
         this.questionService = questionService;
         this.outlineService = outlineService;
-        loadRecords();
     }
 
-    private void loadRecords() {
-        try {
-            records = JsonUtil.readList(ANSWER_RECORDS_PATH,
-                    TypeToken.getParameterized(List.class, AnswerRecord.class).getType());
-            if (records == null) {
-                records = new ArrayList<>();
-            }
-            log.info("加载答题记录 {} 条", records.size());
-        } catch (Exception e) {
-            records = new ArrayList<>();
-            log.warn("答题记录不存在，初始化为空列表");
-        }
+    public void record(String bank, String examBank, Question question, String userAnswer, boolean correct) {
+        record(UserService.GUEST_USER, bank, examBank, question, userAnswer, correct);
     }
 
-    public synchronized void record(String bank, String examBank, Question question, String userAnswer, boolean correct) {
+    public synchronized void record(String userKey, String bank, String examBank, Question question, String userAnswer, boolean correct) {
+        List<AnswerRecord> records = recordsFor(userKey);
         int newId = records.isEmpty() ? 1 : records.stream().mapToInt(AnswerRecord::getId).max().orElse(0) + 1;
         String normalizedBank = questionService.normalizeBank(bank);
         String normalizedExamBank = QuestionService.BANK_EXAM.equals(normalizedBank)
@@ -63,10 +53,15 @@ public class AnswerStatsService {
                 correct,
                 System.currentTimeMillis()
         ));
-        saveRecords();
+        saveRecords(userKey);
     }
 
     public Map<String, Object> getChapterMastery() {
+        return getChapterMastery(UserService.GUEST_USER);
+    }
+
+    public synchronized Map<String, Object> getChapterMastery(String userKey) {
+        List<AnswerRecord> records = recordsFor(userKey);
         List<Map<String, Object>> chapters = outlineService.getChapterList();
         List<Map<String, Object>> items = new ArrayList<>();
 
@@ -105,6 +100,30 @@ public class AnswerStatsService {
         return result;
     }
 
+    private List<AnswerRecord> recordsFor(String userKey) {
+        String key = UserService.toStorageKey(userKey);
+        return recordsByUser.computeIfAbsent(key, this::loadRecords);
+    }
+
+    private List<AnswerRecord> loadRecords(String userKey) {
+        try {
+            List<AnswerRecord> records = JsonUtil.readList(pathForUser(userKey),
+                    TypeToken.getParameterized(List.class, AnswerRecord.class).getType());
+            return records == null ? new ArrayList<>() : records;
+        } catch (Exception e) {
+            if (UserService.GUEST_USER.equals(userKey)) {
+                try {
+                    List<AnswerRecord> legacy = JsonUtil.readList(LEGACY_ANSWER_RECORDS_PATH,
+                            TypeToken.getParameterized(List.class, AnswerRecord.class).getType());
+                    return legacy == null ? new ArrayList<>() : legacy;
+                } catch (Exception ignored) {
+                    // No legacy data either.
+                }
+            }
+            return new ArrayList<>();
+        }
+    }
+
     private String levelFor(long attempts, int rate) {
         if (attempts == 0) return "empty";
         if (rate < 60) return "red";
@@ -129,20 +148,27 @@ public class AnswerStatsService {
         return 3;
     }
 
-    private void saveRecords() {
+    private void saveRecords(String userKey) {
+        String key = UserService.toStorageKey(userKey);
+        String path = pathForUser(key);
+        List<AnswerRecord> records = recordsFor(key);
         try {
             URL resource = AnswerStatsService.class.getClassLoader().getResource("");
             if (resource != null) {
                 File classRoot = new File(resource.toURI());
-                JsonUtil.writeList(new File(classRoot, ANSWER_RECORDS_PATH).getPath(), records);
+                JsonUtil.writeList(new File(classRoot, path).getPath(), records);
             }
 
             String srcPath = System.getProperty("user.dir") +
                     File.separator + "src" + File.separator + "main" +
-                    File.separator + "resources" + File.separator + ANSWER_RECORDS_PATH.replace("/", File.separator);
+                    File.separator + "resources" + File.separator + path.replace("/", File.separator);
             JsonUtil.writeList(srcPath, records);
         } catch (Exception e) {
-            log.error("保存答题记录失败", e);
+            log.error("Failed to save answer records for user {}", key, e);
         }
+    }
+
+    private String pathForUser(String userKey) {
+        return String.format(USER_ANSWER_RECORDS_PATH_PATTERN, UserService.toStorageKey(userKey));
     }
 }

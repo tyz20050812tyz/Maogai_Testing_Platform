@@ -46,6 +46,8 @@ public class PageServlet extends HttpServlet {
                 return "/WEB-INF/views/stats.jsp";
             case "/flashcards":
                 return "/WEB-INF/views/flashcards.jsp";
+            case "/login":
+                return "/WEB-INF/views/login.jsp";
             default:
                 return "/WEB-INF/views/index.jsp";
         }

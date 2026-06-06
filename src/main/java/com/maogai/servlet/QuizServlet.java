@@ -3,6 +3,7 @@ package com.maogai.servlet;
 import com.maogai.model.Question;
 import com.maogai.service.QuestionService;
 import com.maogai.service.ServiceFactory;
+import com.maogai.service.UserService;
 import com.maogai.service.WrongBookService;
 import com.maogai.util.JsonUtil;
 
@@ -25,6 +26,8 @@ public class QuizServlet extends HttpServlet {
         String pathInfo = req.getPathInfo();
         QuestionService service = ServiceFactory.getQuestionService();
         WrongBookService wrongBookService = ServiceFactory.getWrongBookService();
+        UserService userService = ServiceFactory.getUserService();
+        String userKey = userService.currentUserKey(req);
         String bank = service.normalizeBank(req.getParameter("bank"));
         String examBank = service.normalizeExamBank(req.getParameter("examBank"));
 
@@ -32,7 +35,7 @@ public class QuizServlet extends HttpServlet {
             writeJson(resp, service.getExamBanks());
 
         } else if ("/mastery".equals(pathInfo)) {
-            writeJson(resp, ServiceFactory.getAnswerStatsService().getChapterMastery());
+            writeJson(resp, ServiceFactory.getAnswerStatsService().getChapterMastery(userKey));
 
         } else if ("/list".equals(pathInfo)) {
             String chapterStr = req.getParameter("chapter");
@@ -43,7 +46,7 @@ public class QuizServlet extends HttpServlet {
             List<Map<String, Object>> result = new ArrayList<>();
             for (Question q : list) {
                 Map<String, Object> map = questionToMap(q, bank, examBank);
-                map.put("inWrongBook", wrongBookService.isInWrongBook(bank, examBank, q.getId()));
+                map.put("inWrongBook", wrongBookService.isInWrongBook(userKey, bank, examBank, q.getId()));
                 result.add(map);
             }
             writeJson(resp, result);
@@ -71,7 +74,7 @@ public class QuizServlet extends HttpServlet {
             Map<String, Object> stats = req.getParameter("examBank") == null
                     ? service.getStats(bank)
                     : service.getStats(bank, examBank);
-            stats.put("wrongCount", wrongBookService.getCount());
+            stats.put("wrongCount", wrongBookService.getCount(userKey));
             writeJson(resp, stats);
 
         } else if ("/question".equals(pathInfo)) {
@@ -82,7 +85,7 @@ public class QuizServlet extends HttpServlet {
                     Map<String, Object> map = questionToMap(q, bank, examBank);
                     map.put("nextId", service.getNextId(bank, examBank, q.getId()));
                     map.put("prevId", service.getPrevId(bank, examBank, q.getId()));
-                    map.put("inWrongBook", wrongBookService.isInWrongBook(bank, examBank, q.getId()));
+                    map.put("inWrongBook", wrongBookService.isInWrongBook(userKey, bank, examBank, q.getId()));
                     writeJson(resp, map);
                 } else {
                     writeError(resp, "题目不存在");
@@ -102,6 +105,8 @@ public class QuizServlet extends HttpServlet {
         String pathInfo = req.getPathInfo();
         QuestionService service = ServiceFactory.getQuestionService();
         WrongBookService wrongBookService = ServiceFactory.getWrongBookService();
+        UserService userService = ServiceFactory.getUserService();
+        String userKey = userService.currentUserKey(req);
 
         if ("/add".equals(pathInfo)) {
             String body = readBody(req);
@@ -142,10 +147,10 @@ public class QuizServlet extends HttpServlet {
             result.put("explanation", question.getExplanation());
             result.put("bank", bank);
             result.put("examBank", examBank);
-            ServiceFactory.getAnswerStatsService().record(bank, examBank, question, userAnswer, correct);
+            ServiceFactory.getAnswerStatsService().record(userKey, bank, examBank, question, userAnswer, correct);
 
             if (!correct) {
-                wrongBookService.addWrong(bank, examBank, questionId);
+                wrongBookService.addWrong(userKey, bank, examBank, questionId);
             }
 
             writeJson(resp, result);
@@ -173,7 +178,7 @@ public class QuizServlet extends HttpServlet {
             int questionId = ((Double) params.get("questionId")).intValue();
             String bank = service.normalizeBank((String) params.get("bank"));
             String examBank = service.normalizeExamBank((String) params.get("examBank"));
-            wrongBookService.addWrong(bank, examBank, questionId);
+            wrongBookService.addWrong(userKey, bank, examBank, questionId);
             Map<String, Object> result = new HashMap<>();
             result.put("success", true);
             result.put("message", "已加入错题本");
@@ -185,7 +190,7 @@ public class QuizServlet extends HttpServlet {
             int questionId = ((Double) params.get("questionId")).intValue();
             String bank = service.normalizeBank((String) params.get("bank"));
             String examBank = service.normalizeExamBank((String) params.get("examBank"));
-            wrongBookService.removeWrong(bank, examBank, questionId);
+            wrongBookService.removeWrong(userKey, bank, examBank, questionId);
             Map<String, Object> result = new HashMap<>();
             result.put("success", true);
             result.put("message", "已从错题本移除");

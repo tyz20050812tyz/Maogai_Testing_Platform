@@ -11,6 +11,7 @@
     --gold: #b7791f;
     --green: #15803d;
     --blue: #1d4ed8;
+    --text: #172033;
     --shadow: 0 10px 30px rgba(23, 32, 51, 0.08);
 }
 
@@ -22,6 +23,7 @@
 
 html {
     scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -34,6 +36,7 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    overflow-x: hidden;
 }
 
 a {
@@ -45,6 +48,19 @@ input,
 select,
 textarea {
     font: inherit;
+    max-width: 100%;
+}
+
+pre,
+code {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+img,
+video,
+canvas {
+    max-width: 100%;
 }
 
 /* ===== Header ===== */
@@ -123,6 +139,7 @@ textarea {
     padding: 28px 20px 36px;
     flex: 1;
     width: 100%;
+    min-width: 0;
 }
 
 .main-footer {
@@ -496,6 +513,8 @@ textarea {
     width: 100%;
     border-collapse: collapse;
     margin: 16px 0;
+    display: block;
+    overflow-x: auto;
 }
 
 .content-table td {
@@ -508,6 +527,7 @@ textarea {
     border-radius: 8px;
     padding: 22px;
     margin-bottom: 18px;
+    min-width: 0;
 }
 
 .question-header {
@@ -547,6 +567,7 @@ textarea {
     margin-bottom: 18px;
     line-height: 1.75;
     font-weight: 700;
+    overflow-wrap: anywhere;
 }
 
 .options-list {
@@ -564,6 +585,12 @@ textarea {
     border-radius: 8px;
     cursor: pointer;
     transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.option-item span {
+    min-width: 0;
 }
 
 .option-item:hover,
@@ -694,17 +721,31 @@ textarea {
     border-radius: 8px;
 }
 
+.filter-bar > * {
+    min-width: 0;
+}
+
 .filter-bar select,
 .filter-bar input,
 .random-setup select,
 .import-section select {
+    flex: 1 1 180px;
     min-height: 40px;
+    min-width: 0;
     padding: 8px 12px;
     border: 1px solid var(--line);
     border-radius: 8px;
     background: #fff;
     color: var(--ink);
     font-size: 0.92rem;
+}
+
+.import-section label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 100%;
+    margin-bottom: 10px;
 }
 
 .filter-bar select:focus,
@@ -737,11 +778,13 @@ textarea {
 
 .wrong-item-info {
     flex: 1;
+    min-width: 0;
 }
 
 .wrong-item-title {
     font-weight: 700;
     margin-bottom: 5px;
+    overflow-wrap: anywhere;
 }
 
 .wrong-item-meta {
@@ -975,6 +1018,8 @@ textarea {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
     margin-top: 20px;
     padding-top: 16px;
     border-top: 1px solid var(--line);
@@ -997,6 +1042,7 @@ textarea {
     gap: 8px;
     margin: 8px 10px;
     font-weight: 700;
+    max-width: 100%;
 }
 
 .random-score .score-number {
@@ -1077,10 +1123,14 @@ textarea {
     font-weight: 900;
 }
 
+#flashcard-container {
+    margin-top: 18px;
+}
+
 .flashcard-box {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+    appearance: none;
+    display: grid;
+    align-content: start;
     gap: 14px;
     width: 100%;
     min-height: 280px;
@@ -1088,10 +1138,25 @@ textarea {
     border: 1px solid rgba(20, 35, 65, 0.12);
     border-radius: 8px;
     background: #fff;
-    color: var(--text);
+    color: var(--ink);
     text-align: left;
     cursor: pointer;
     box-shadow: var(--shadow);
+    user-select: none;
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.flashcard-box:hover,
+.flashcard-box:focus {
+    border-color: rgba(185, 28, 28, 0.3);
+    box-shadow: 0 16px 34px rgba(23, 32, 51, 0.11);
+    outline: none;
+    transform: translateY(-2px);
+}
+
+.flashcard-box:focus-visible {
+    outline: 3px solid rgba(185, 28, 28, 0.16);
+    outline-offset: 3px;
 }
 
 .flashcard-box strong {
@@ -1134,6 +1199,15 @@ textarea {
         align-items: flex-start;
         flex-direction: column;
         padding: 12px 16px;
+        gap: 10px;
+        min-height: auto;
+    }
+
+    .logo {
+        max-width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .main-nav {
@@ -1142,21 +1216,50 @@ textarea {
         overflow-x: auto;
         flex-wrap: nowrap;
         padding-bottom: 2px;
+        scrollbar-width: thin;
     }
 
     .main-nav a {
+        flex: 0 0 auto;
         white-space: nowrap;
+    }
+
+    .reader-toolbar {
+        top: 118px;
+    }
+
+    .section-heading-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .section-heading-row .btn {
+        width: fit-content;
     }
 }
 
 @media (max-width: 640px) {
+    body {
+        line-height: 1.58;
+    }
+
     .main-content {
         padding: 18px 12px 28px;
     }
 
     .card,
     .question-card {
-        padding: 18px;
+        padding: 16px;
+        margin-bottom: 14px;
+    }
+
+    .card-title {
+        font-size: 1.08rem;
+        margin-bottom: 14px;
+    }
+
+    .section-subtitle {
+        font-size: 0.9rem;
     }
 
     .hero-main {
@@ -1164,9 +1267,26 @@ textarea {
         min-height: 250px;
     }
 
+    .hero-actions,
+    .question-actions,
+    .wrong-item-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+        width: 100%;
+    }
+
+    .hero-actions .btn,
+    .question-actions .btn,
+    .wrong-item-actions .btn,
+    .filter-bar .btn,
+    .quiz-nav .btn {
+        width: 100%;
+    }
+
     .dashboard,
     .stats-grid,
-    .quick-links {
+    .quick-links,
+    .mastery-grid {
         grid-template-columns: 1fr;
     }
 
@@ -1178,19 +1298,205 @@ textarea {
         flex-direction: column;
     }
 
+    .quiz-nav {
+        width: 100%;
+    }
+
     .filter-bar,
     .chat-input-area {
         flex-direction: column;
         align-items: stretch;
+        gap: 10px;
+        padding: 14px;
+    }
+
+    .filter-bar select,
+    .filter-bar input,
+    .import-section select,
+    .random-setup select {
+        flex: 1 1 auto;
+        width: 100%;
+    }
+
+    .import-section label {
+        display: flex;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 6px;
+        width: 100%;
+        margin-right: 0 !important;
     }
 
     .chat-bubble {
         max-width: 92%;
     }
 
+    .chat-container {
+        height: calc(100vh - 210px);
+        min-height: 360px;
+    }
+
+    .chat-input-area .btn {
+        width: 100%;
+    }
+
+    .import-tab {
+        flex: 1 0 auto;
+        min-width: 108px;
+        padding: 11px 14px;
+    }
+
+    .import-tab-panel {
+        padding: 16px;
+    }
+
+    .import-upload-zone {
+        padding: 28px 14px;
+    }
+
+    .import-textarea {
+        min-height: 190px;
+    }
+
     .random-setup label {
         display: flex;
-        justify-content: space-between;
+        align-items: stretch;
+        flex-direction: column;
+        justify-content: flex-start;
         margin: 8px 0;
+        text-align: left;
+        width: 100%;
+    }
+
+    .random-setup,
+    .random-score {
+        padding: 24px 0;
+    }
+
+    .question-text {
+        font-size: 1rem;
+    }
+
+    .option-item {
+        padding: 12px;
+    }
+
+    .answer-result,
+    .explanation-box {
+        padding: 12px;
+        overflow-wrap: anywhere;
+    }
+
+    .reader-toolbar {
+        position: static;
+        justify-content: stretch;
+        background: transparent;
+        padding-top: 0;
+    }
+
+    .reader-toolbar .btn,
+    .chapter-content + div .btn {
+        width: 100%;
+        margin-left: 0 !important;
+        margin-top: 8px;
+    }
+
+    .chapter-content {
+        font-size: 0.98rem;
+        line-height: 1.85;
+    }
+
+    .chapter-content h1 {
+        font-size: 1.28rem;
+    }
+
+    .chapter-content h2 {
+        font-size: 1.08rem;
+    }
+
+    .chapter-content p {
+        text-align: left;
+    }
+
+    .stats-table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .flashcard-box {
+        min-height: 240px;
+        padding: 22px;
+    }
+
+    .flashcard-box > span:last-child {
+        font-size: 1.06rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .main-content {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .header-container {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .main-nav a {
+        padding: 7px 10px;
+        font-size: 0.86rem;
+    }
+
+    .hero-main {
+        min-height: 220px;
+    }
+
+    .hero-main h1 {
+        font-size: 1.82rem;
+    }
+
+    .stat-card,
+    .quick-link,
+    .study-panel {
+        padding: 16px;
+    }
+
+    .stat-number {
+        font-size: 2rem;
+    }
+
+    .quick-link {
+        grid-template-columns: 36px 1fr;
+    }
+
+    .quick-link-icon {
+        width: 36px;
+        height: 36px;
+    }
+
+    .flashcard-box {
+        min-height: 220px;
+        padding: 18px;
+    }
+
+    .question-card {
+        padding: 14px;
+    }
+
+    .btn {
+        min-height: 42px;
+    }
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .btn:hover,
+    .stat-card:hover,
+    .quick-link:hover,
+    .mastery-item:hover,
+    .flashcard-box:hover {
+        transform: none;
     }
 }

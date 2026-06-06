@@ -12,8 +12,7 @@
 <script>
 Quiz.init('${pageContext.request.contextPath}');
 
-fetch(Quiz.ctx + '/api/outline/list')
-    .then(function(r) { return r.json(); })
+Quiz.getJson(Quiz.ctx + '/api/outline/list')
     .then(function(data) {
         var html = '';
         if (Array.isArray(data)) {

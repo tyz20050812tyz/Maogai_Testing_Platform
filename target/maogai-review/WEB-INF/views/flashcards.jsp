@@ -33,8 +33,7 @@ function loadFlashcards() {
     var url = Quiz.ctx + '/api/flashcards/list' + (chapter ? '?chapter=' + encodeURIComponent(chapter) : '');
     var container = document.getElementById('flashcard-container');
     Quiz.setLoading(container, '正在加载卡片...');
-    fetch(url)
-        .then(function(r) { return r.json(); })
+    Quiz.getJson(url)
         .then(function(data) {
             flashcards = Array.isArray(data) ? data : [];
             flashcardIndex = 0;
@@ -56,11 +55,11 @@ function renderFlashcard() {
     }
     var card = flashcards[flashcardIndex];
     counter.textContent = (flashcardIndex + 1) + ' / ' + flashcards.length;
-    var html = '<button class="flashcard-box" onclick="flipFlashcard()" aria-label="翻转卡片">';
+    var html = '<div class="flashcard-box" role="button" tabindex="0" onclick="flipFlashcard()" onkeydown="handleFlashcardKey(event)" aria-label="翻转卡片">';
     html += '<span class="flashcard-tag">' + Quiz.escapeHtml(card.tag || '速记') + '</span>';
     html += '<strong>' + Quiz.escapeHtml(flashcardFlipped ? '答案' : '问题') + '</strong>';
     html += '<span>' + Quiz.escapeHtml(flashcardFlipped ? card.back : card.front).replace(/\n/g, '<br>') + '</span>';
-    html += '</button>';
+    html += '</div>';
     container.innerHTML = html;
 }
 
@@ -68,6 +67,13 @@ function flipFlashcard() {
     if (!flashcards.length) return;
     flashcardFlipped = !flashcardFlipped;
     renderFlashcard();
+}
+
+function handleFlashcardKey(event) {
+    if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        flipFlashcard();
+    }
 }
 
 function prevFlashcard() {

@@ -128,8 +128,7 @@ document.addEventListener('mousedown', function(event) {
 });
 
 if (chapterId) {
-    fetch(Quiz.ctx + '/api/outline/reader?id=' + chapterId)
-        .then(function(r) { return r.json(); })
+    Quiz.getJson(Quiz.ctx + '/api/outline/reader?id=' + chapterId)
         .then(function(data) {
             if (data.content) {
                 restoreChapterHighlights(data.content);

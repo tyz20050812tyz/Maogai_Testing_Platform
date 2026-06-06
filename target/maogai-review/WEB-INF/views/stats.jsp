@@ -51,9 +51,9 @@ Quiz.init('${pageContext.request.contextPath}');
 Quiz.loadMasteryMap('stats-mastery-map', 'stats-mastery-suggestion');
 
 Promise.all([
-    fetch(Quiz.ctx + '/api/quiz/stats?bank=exam').then(function(r) { return r.json(); }),
-    fetch(Quiz.ctx + '/api/quiz/stats?bank=chapter').then(function(r) { return r.json(); }),
-    fetch(Quiz.ctx + '/api/outline/list').then(function(r) { return r.json(); })
+    Quiz.getJson(Quiz.ctx + '/api/quiz/stats?bank=exam'),
+    Quiz.getJson(Quiz.ctx + '/api/quiz/stats?bank=chapter'),
+    Quiz.getJson(Quiz.ctx + '/api/outline/list')
 ]).then(function(results) {
     var exam = results[0] || {};
     var chapterStats = results[1] || {};

@@ -1,14 +1,19 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%
+    response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+    response.setHeader("Pragma", "no-cache");
+    response.setDateHeader("Expires", 0);
+%>
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>毛概复习助手</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/style.css">
-    <script src="${pageContext.request.contextPath}/static/js/quiz.js"></script>
-    <script src="${pageContext.request.contextPath}/static/js/ai.js"></script>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/style.css?v=20260606-refresh">
+    <script src="${pageContext.request.contextPath}/static/js/quiz.js?v=20260606-refresh"></script>
+    <script src="${pageContext.request.contextPath}/static/js/ai.js?v=20260606-refresh"></script>
 </head>
 <body>
 <header class="main-header">

@@ -16,6 +16,41 @@ var Quiz = {
         this.ctx = ctx || '';
     },
 
+    ready: function(callback) {
+        if (typeof callback !== 'function') return;
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', callback, { once: true });
+        } else {
+            callback();
+        }
+    },
+
+    getJson: function(url, retries) {
+        retries = retries == null ? 1 : retries;
+        function request() {
+            return fetch(url, {
+                cache: 'no-store',
+                headers: { 'Accept': 'application/json' }
+            }).then(function(r) {
+                if (!r.ok) {
+                    throw new Error('HTTP ' + r.status);
+                }
+                return r.json();
+            });
+        }
+
+        return request().catch(function(err) {
+            if (retries <= 0) {
+                throw err;
+            }
+            return new Promise(function(resolve) {
+                setTimeout(resolve, 350);
+            }).then(function() {
+                return Quiz.getJson(url, retries - 1);
+            });
+        });
+    },
+
     setBank: function(bank) {
         this.bank = bank === 'chapter' ? 'chapter' : 'exam';
     },
@@ -28,8 +63,7 @@ var Quiz = {
         var ids = Array.isArray(selectIds) ? selectIds : [selectIds];
         var self = this;
 
-        fetch(this.ctx + '/api/outline/list')
-            .then(function(r) { return r.json(); })
+        this.getJson(this.ctx + '/api/outline/list')
             .then(function(chapters) {
                 ids.forEach(function(id) {
                     var select = document.getElementById(id);
@@ -67,8 +101,7 @@ var Quiz = {
         var ids = Array.isArray(selectIds) ? selectIds : [selectIds];
         var self = this;
 
-        fetch(this.ctx + '/api/quiz/exam-banks')
-            .then(function(r) { return r.json(); })
+        this.getJson(this.ctx + '/api/quiz/exam-banks')
             .then(function(banks) {
                 var firstId = '';
                 ids.forEach(function(id) {
@@ -156,8 +189,7 @@ var Quiz = {
         if (type) params.push('type=' + encodeURIComponent(type));
 
         var self = this;
-        fetch(this.ctx + '/api/quiz/list?' + params.join('&'))
-            .then(function(r) { return r.json(); })
+        this.getJson(this.ctx + '/api/quiz/list?' + params.join('&'))
             .then(function(data) {
                 if (Array.isArray(data)) {
                     self.renderQuestionList(data, containerId);
@@ -387,8 +419,7 @@ var Quiz = {
         if (chapter && chapter > 0) params.push('chapter=' + encodeURIComponent(chapter));
 
         var self = this;
-        fetch(this.ctx + '/api/quiz/random?' + params.join('&'))
-            .then(function(r) { return r.json(); })
+        this.getJson(this.ctx + '/api/quiz/random?' + params.join('&'))
             .then(function(data) {
                 if (Array.isArray(data) && data.length) {
                     self.renderRandomQuiz(data, containerId);
@@ -508,8 +539,7 @@ var Quiz = {
         var container = document.getElementById(containerId);
         if (!container) return;
         this.setLoading(container, '正在计算掌握度...');
-        fetch(this.ctx + '/api/quiz/mastery')
-            .then(function(r) { return r.json(); })
+        this.getJson(this.ctx + '/api/quiz/mastery')
             .then(function(data) {
                 var chapters = data.chapters || [];
                 if (!chapters.length) {
@@ -562,8 +592,7 @@ var Quiz = {
         this.setLoading(container, '正在加载错题...');
         if (!container) return;
 
-        fetch(this.ctx + '/api/wrong/list')
-            .then(function(r) { return r.json(); })
+        this.getJson(this.ctx + '/api/wrong/list')
             .then(function(data) {
                 if (data.success && data.data && data.data.length) {
                     self.renderWrongBook(data.data, container);

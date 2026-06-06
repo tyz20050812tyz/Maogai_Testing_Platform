@@ -150,7 +150,7 @@ public class QuizServlet extends HttpServlet {
             ServiceFactory.getAnswerStatsService().record(userKey, bank, examBank, question, userAnswer, correct);
 
             if (!correct) {
-                wrongBookService.addWrong(userKey, bank, examBank, questionId);
+                wrongBookService.addWrong(userKey, bank, examBank, questionId, userAnswer);
             }
 
             writeJson(resp, result);

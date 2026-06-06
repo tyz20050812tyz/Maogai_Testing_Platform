@@ -6,23 +6,32 @@ public class WrongRecord {
     private String bank;
     private String examBank;
     private long timestamp;
+    private String userAnswer;
+    private String aiExplanation;
 
     public WrongRecord() {}
 
     public WrongRecord(int id, int questionId, long timestamp) {
-        this(id, questionId, "chapter", timestamp);
+        this(id, questionId, "chapter", "", timestamp, null, null);
     }
 
     public WrongRecord(int id, int questionId, String bank, long timestamp) {
-        this(id, questionId, bank, "", timestamp);
+        this(id, questionId, bank, "", timestamp, null, null);
     }
 
     public WrongRecord(int id, int questionId, String bank, String examBank, long timestamp) {
+        this(id, questionId, bank, examBank, timestamp, null, null);
+    }
+
+    public WrongRecord(int id, int questionId, String bank, String examBank, long timestamp,
+                       String userAnswer, String aiExplanation) {
         this.id = id;
         this.questionId = questionId;
         this.bank = bank;
         this.examBank = examBank;
         this.timestamp = timestamp;
+        this.userAnswer = userAnswer;
+        this.aiExplanation = aiExplanation;
     }
 
     public int getId() { return id; }
@@ -39,4 +48,10 @@ public class WrongRecord {
 
     public long getTimestamp() { return timestamp; }
     public void setTimestamp(long timestamp) { this.timestamp = timestamp; }
+
+    public String getUserAnswer() { return userAnswer; }
+    public void setUserAnswer(String userAnswer) { this.userAnswer = userAnswer; }
+
+    public String getAiExplanation() { return aiExplanation; }
+    public void setAiExplanation(String aiExplanation) { this.aiExplanation = aiExplanation; }
 }

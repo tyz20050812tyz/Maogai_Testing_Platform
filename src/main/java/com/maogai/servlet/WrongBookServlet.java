@@ -74,6 +74,18 @@ public class WrongBookServlet extends HttpServlet {
             result.put("message", "错题本已清空");
             writeJson(resp, result);
 
+        } else if ("/explain".equals(pathInfo)) {
+            Map<String, Object> params = parseBody(req);
+            int questionId = ((Double) params.get("questionId")).intValue();
+            String bank = questionService.normalizeBank((String) params.get("bank"));
+            String examBank = questionService.normalizeExamBank((String) params.get("examBank"));
+            String aiExplanation = (String) params.get("aiExplanation");
+            service.updateAIExplanation(userKey, bank, examBank, questionId, aiExplanation);
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", true);
+            result.put("message", "AI解析已保存");
+            writeJson(resp, result);
+
         } else {
             writeError(resp, "未知接口");
         }

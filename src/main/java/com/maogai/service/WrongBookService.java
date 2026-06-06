@@ -44,6 +44,8 @@ public class WrongBookService {
                 map.put("bank", bank);
                 map.put("examBank", examBank);
                 map.put("timestamp", record.getTimestamp());
+                map.put("userAnswer", record.getUserAnswer());
+                map.put("aiExplanation", record.getAiExplanation());
                 map.put("question", question);
                 result.add(map);
             }
@@ -52,18 +54,28 @@ public class WrongBookService {
     }
 
     public synchronized WrongRecord addWrong(int questionId) {
-        return addWrong(UserService.GUEST_USER, QuestionService.BANK_CHAPTER, null, questionId);
+        return addWrong(UserService.GUEST_USER, QuestionService.BANK_CHAPTER, null, questionId, null, null);
     }
 
     public synchronized WrongRecord addWrong(String bank, int questionId) {
-        return addWrong(UserService.GUEST_USER, bank, null, questionId);
+        return addWrong(UserService.GUEST_USER, bank, null, questionId, null, null);
     }
 
     public synchronized WrongRecord addWrong(String bank, String examBank, int questionId) {
-        return addWrong(UserService.GUEST_USER, bank, examBank, questionId);
+        return addWrong(UserService.GUEST_USER, bank, examBank, questionId, null, null);
     }
 
     public synchronized WrongRecord addWrong(String userKey, String bank, String examBank, int questionId) {
+        return addWrong(userKey, bank, examBank, questionId, null, null);
+    }
+
+    public synchronized WrongRecord addWrong(String userKey, String bank, String examBank, int questionId,
+                                             String userAnswer) {
+        return addWrong(userKey, bank, examBank, questionId, userAnswer, null);
+    }
+
+    public synchronized WrongRecord addWrong(String userKey, String bank, String examBank, int questionId,
+                                             String userAnswer, String aiExplanation) {
         List<WrongRecord> records = recordsFor(userKey);
         String normalizedBank = questionService.normalizeBank(bank);
         String normalizedExamBank = normalizeRecordExamBank(normalizedBank, examBank);
@@ -77,11 +89,16 @@ public class WrongBookService {
                             && normalizedBank.equals(questionService.normalizeBank(r.getBank()))
                             && normalizedExamBank.equals(normalizeRecordExamBank(normalizedBank, r.getExamBank())))
                     .findFirst()
-                    .ifPresent(r -> r.setTimestamp(System.currentTimeMillis()));
+                    .ifPresent(r -> {
+                        r.setTimestamp(System.currentTimeMillis());
+                        if (userAnswer != null) r.setUserAnswer(userAnswer);
+                        if (aiExplanation != null) r.setAiExplanation(aiExplanation);
+                    });
         } else {
             int newId = records.isEmpty() ? 1 :
                     records.stream().mapToInt(WrongRecord::getId).max().orElse(0) + 1;
-            records.add(new WrongRecord(newId, questionId, normalizedBank, normalizedExamBank, System.currentTimeMillis()));
+            records.add(new WrongRecord(newId, questionId, normalizedBank, normalizedExamBank,
+                    System.currentTimeMillis(), userAnswer, aiExplanation));
         }
         saveRecords(userKey);
         return records.stream()
@@ -90,6 +107,21 @@ public class WrongBookService {
                         && normalizedExamBank.equals(normalizeRecordExamBank(normalizedBank, r.getExamBank())))
                 .findFirst()
                 .orElse(null);
+    }
+
+    public synchronized void updateAIExplanation(String userKey, String bank, String examBank, int questionId,
+                                                  String aiExplanation) {
+        String normalizedBank = questionService.normalizeBank(bank);
+        String normalizedExamBank = normalizeRecordExamBank(normalizedBank, examBank);
+        recordsFor(userKey).stream()
+                .filter(r -> r.getQuestionId() == questionId
+                        && normalizedBank.equals(questionService.normalizeBank(r.getBank()))
+                        && normalizedExamBank.equals(normalizeRecordExamBank(normalizedBank, r.getExamBank())))
+                .findFirst()
+                .ifPresent(r -> {
+                    r.setAiExplanation(aiExplanation);
+                    saveRecords(userKey);
+                });
     }
 
     public synchronized boolean removeWrong(int questionId) {

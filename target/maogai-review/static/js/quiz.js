@@ -357,6 +357,7 @@ var Quiz = {
         var container = document.getElementById(containerId);
         if (!container) return;
         container.innerHTML = '<div class="loading-state">AI正在分析错因...</div>';
+        var self = this;
         fetch(this.ctx + '/api/quiz/explain', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -365,9 +366,19 @@ var Quiz = {
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.success) {
-                container.innerHTML = '<div class="explanation-box ai-explanation">' + Quiz.escapeHtml(data.explanation || '').replace(/\n/g, '<br>') + '</div>';
+                var explanationHtml = '<div class="explanation-box ai-explanation">' + self.escapeHtml(data.explanation || '').replace(/\n/g, '<br>') + '</div>';
+                container.innerHTML = explanationHtml;
+                // 保存AI解析到错题本
+                fetch(self.ctx + '/api/wrong/explain', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(self.requestBody(bank, examBank, {
+                        questionId: questionId,
+                        aiExplanation: data.explanation || ''
+                    }))
+                }).catch(function() { /* 静默失败，不影响主流程 */ });
             } else {
-                container.innerHTML = '<div class="empty-state">' + Quiz.escapeHtml(data.message || 'AI解释失败') + '</div>';
+                container.innerHTML = '<div class="empty-state">' + self.escapeHtml(data.message || 'AI解释失败') + '</div>';
             }
         })
         .catch(function() {
@@ -608,19 +619,68 @@ var Quiz = {
     renderWrongBook: function(records, container) {
         var html = '';
         var self = this;
-        records.forEach(function(record) {
+        records.forEach(function(record, index) {
             var q = record.question || {};
             var bank = record.bank || q.bank || 'exam';
             var examBank = record.examBank || q.examBank || '';
             var bankLabel = bank === 'chapter' ? '章节题库' : '考试题库';
-            html += '<div class="wrong-item">';
-            html += '<div class="wrong-item-info">';
-            html += '<div class="wrong-item-title">' + self.escapeHtml(q.question || '题目已不存在') + '</div>';
-            html += '<div class="wrong-item-meta">' + bankLabel + (examBank ? ' · ' + self.escapeHtml(examBank) : '') + ' · 正确答案：' + self.escapeHtml(q.answer || '-') + '</div>';
-            html += '</div>';
-            html += '<div class="wrong-item-actions">';
-            html += '<button class="btn btn-outline btn-small" onclick="Quiz.removeWrong(' + q.id + ', \'' + self.escapeHtml(bank) + '\', \'' + self.escapeHtml(examBank) + '\')">移除</button>';
-            html += '</div>';
+            var answer = q.answer || '';
+
+            html += '<div class="wrong-book-card">';
+
+            // 题头：题型 + 序号 + 来源
+            html += '  <div class="question-header">';
+            html += '    <span class="question-type type-' + self.escapeHtml(q.type) + '">' + self.typeLabel(q.type) + '</span>';
+            html += '    <span class="quiz-counter">第 ' + (index + 1) + ' 题</span>';
+            html += '    <span class="wrong-bank-tag">' + self.escapeHtml(bankLabel) + (examBank ? ' · ' + self.escapeHtml(examBank) : '') + '</span>';
+            html += '  </div>';
+
+            // 题目正文
+            html += '  <div class="question-text">' + self.escapeHtml(q.question || '题目已不存在') + '</div>';
+
+            // 选项列表（只读展示，高亮正确答案）
+            if (q.options && q.options.length) {
+                html += '  <div class="options-list">';
+                for (var i = 0; i < q.options.length; i++) {
+                    var letter = String.fromCharCode(65 + i);
+                    var isCorrect = answer.indexOf(letter) !== -1;
+                    html += '    <div class="option-item ' + (isCorrect ? 'correct' : '') + '">';
+                    html += '      <span class="option-letter">' + letter + '</span>';
+                    html += '      <span>' + self.escapeHtml(q.options[i]) + '</span>';
+                    if (isCorrect) {
+                        html += '      <span class="correct-badge">✓ 正确答案</span>';
+                    }
+                    html += '    </div>';
+                }
+                html += '  </div>';
+            }
+
+            // 正确答案 & 错选答案 & 解析
+            var userAnswer = record.userAnswer || '';
+            var aiExplanation = record.aiExplanation || '';
+            html += '  <div class="wrong-answer-section">';
+            html += '    <strong>正确答案：</strong>' + self.escapeHtml(answer || '-');
+            if (userAnswer) {
+                html += '    <span class="wrong-user-answer">你选了：<em>' + self.escapeHtml(userAnswer) + '</em></span>';
+            }
+            if (q.explanation) {
+                html += '    <div class="explanation-box">' + self.escapeHtml(q.explanation) + '</div>';
+            }
+            html += '  </div>';
+
+            // AI 错因解析
+            if (aiExplanation) {
+                html += '  <div class="wrong-ai-section">';
+                html += '    <div class="wrong-ai-label">🤖 AI 错因分析</div>';
+                html += '    <div class="explanation-box ai-explanation">' + self.escapeHtml(aiExplanation).replace(/\n/g, '<br>') + '</div>';
+                html += '  </div>';
+            }
+
+            // 操作按钮
+            html += '  <div class="wrong-item-actions">';
+            html += '    <button class="btn btn-outline btn-small" onclick="Quiz.removeWrong(' + q.id + ', \'' + self.escapeHtml(bank) + '\', \'' + self.escapeHtml(examBank) + '\')">移出错题本</button>';
+            html += '  </div>';
+
             html += '</div>';
         });
         container.innerHTML = html;

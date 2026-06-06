@@ -20,7 +20,7 @@
 
 <div class="card login-card">
     <h2 class="card-title">用户登录与注册</h2>
-    <p class="section-subtitle">请先注册或登录，进入后才能访问首页、题库、统计和 AI 功能。</p>
+    <p class="section-subtitle">请先注册或登录。注册需要手机号验证码并设置密码，登录需要用户名和密码。</p>
 
     <c:if test="${not empty authMessage}">
         <div class="import-result error"><c:out value="${authMessage}"/></div>
@@ -31,8 +31,12 @@
             <input type="hidden" name="redirect" value="${loginRedirect}">
             <h3>手机号注册</h3>
             <label>
-                昵称
-                <input type="text" name="username" placeholder="例如：佟雨泽" maxlength="40">
+                用户名
+                <input type="text" name="username" placeholder="例如：佟雨泽" required maxlength="40" autocomplete="username">
+            </label>
+            <label>
+                设置密码
+                <input type="password" name="password" placeholder="至少 6 位" required minlength="6" maxlength="64" autocomplete="new-password">
             </label>
             <label>
                 手机号
@@ -53,8 +57,12 @@
             <input type="hidden" name="redirect" value="${loginRedirect}">
             <h3>已注册用户登录</h3>
             <label>
-                用户名或手机号
-                <input type="text" name="username" placeholder="请输入已注册手机号或昵称" required maxlength="40">
+                用户名
+                <input type="text" name="username" placeholder="请输入用户名" required maxlength="40" autocomplete="username">
+            </label>
+            <label>
+                密码
+                <input type="password" name="password" placeholder="请输入密码" required minlength="6" maxlength="64" autocomplete="current-password">
             </label>
             <button class="btn btn-outline" type="submit">进入学习档案</button>
             <div class="empty-state login-note">

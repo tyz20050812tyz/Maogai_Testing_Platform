@@ -45,12 +45,13 @@ public class AuthServlet extends HttpServlet {
 
     private void handleLogin(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String username = req.getParameter("username");
-        UserAccount account = ServiceFactory.getUserAccountService().touchLogin(username);
+        String password = req.getParameter("password");
+        UserAccount account = ServiceFactory.getUserAccountService().authenticate(username, password);
         if (account != null) {
-            ServiceFactory.getUserService().login(req, account.getUsername());
+            ServiceFactory.getUserService().login(req, account.getUsername(), account.getUserKey());
             redirectBack(req, resp);
         } else {
-            req.getSession(true).setAttribute("authMessage", "账号不存在，请先用手机号注册");
+            req.getSession(true).setAttribute("authMessage", "用户名或密码错误");
             resp.sendRedirect(req.getContextPath() + "/page/login");
         }
     }
@@ -77,6 +78,7 @@ public class AuthServlet extends HttpServlet {
         String phone = accountService.normalizePhone(req.getParameter("phone"));
         String code = req.getParameter("code");
         String username = req.getParameter("username");
+        String password = req.getParameter("password");
 
         if (!accountService.isValidPhone(phone)) {
             req.getSession(true).setAttribute("authMessage", "请输入正确的手机号");
@@ -89,9 +91,14 @@ public class AuthServlet extends HttpServlet {
             return;
         }
 
-        UserAccount account = accountService.registerOrUpdate(username, phone);
-        ServiceFactory.getUserService().login(req, account.getUsername());
-        redirectBack(req, resp);
+        try {
+            UserAccount account = accountService.register(username, phone, password);
+            ServiceFactory.getUserService().login(req, account.getUsername(), account.getUserKey());
+            redirectBack(req, resp);
+        } catch (IllegalArgumentException e) {
+            req.getSession(true).setAttribute("authMessage", e.getMessage());
+            resp.sendRedirect(req.getContextPath() + "/page/login");
+        }
     }
 
     private void redirectBack(HttpServletRequest req, HttpServletResponse resp) throws IOException {

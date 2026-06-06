@@ -19,9 +19,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>毛概复习助手</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/style.css?v=20260606-authwall">
-    <script src="${pageContext.request.contextPath}/static/js/quiz.js?v=20260606-authwall"></script>
-    <script src="${pageContext.request.contextPath}/static/js/ai.js?v=20260606-authwall"></script>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/style.css?v=20260606-password">
+    <script src="${pageContext.request.contextPath}/static/js/quiz.js?v=20260606-password"></script>
+    <script src="${pageContext.request.contextPath}/static/js/ai.js?v=20260606-password"></script>
 </head>
 <body>
 <header class="main-header">

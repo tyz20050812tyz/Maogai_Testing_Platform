@@ -13,9 +13,15 @@ public class UserService {
     public String login(HttpServletRequest req, String username) {
         String displayName = normalizeDisplayName(username);
         String userKey = toStorageKey(displayName);
+        return login(req, displayName, userKey);
+    }
+
+    public String login(HttpServletRequest req, String username, String userKey) {
+        String displayName = normalizeDisplayName(username);
+        String storageKey = toStorageKey(userKey == null || userKey.trim().isEmpty() ? displayName : userKey);
         HttpSession session = req.getSession(true);
         session.setAttribute(SESSION_USER, displayName);
-        session.setAttribute(SESSION_USER_KEY, userKey);
+        session.setAttribute(SESSION_USER_KEY, storageKey);
         return displayName;
     }
 

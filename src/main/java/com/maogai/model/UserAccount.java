@@ -5,16 +5,18 @@ public class UserAccount {
     private String username;
     private String phone;
     private String userKey;
+    private String passwordHash;
     private long createdAt;
     private long lastLoginAt;
 
     public UserAccount() {}
 
-    public UserAccount(int id, String username, String phone, String userKey, long createdAt, long lastLoginAt) {
+    public UserAccount(int id, String username, String phone, String userKey, String passwordHash, long createdAt, long lastLoginAt) {
         this.id = id;
         this.username = username;
         this.phone = phone;
         this.userKey = userKey;
+        this.passwordHash = passwordHash;
         this.createdAt = createdAt;
         this.lastLoginAt = lastLoginAt;
     }
@@ -30,6 +32,9 @@ public class UserAccount {
 
     public String getUserKey() { return userKey; }
     public void setUserKey(String userKey) { this.userKey = userKey; }
+
+    public String getPasswordHash() { return passwordHash; }
+    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
 
     public long getCreatedAt() { return createdAt; }
     public void setCreatedAt(long createdAt) { this.createdAt = createdAt; }

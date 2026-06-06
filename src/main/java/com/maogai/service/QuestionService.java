@@ -27,7 +27,7 @@ public class QuestionService {
 
     private static final String CHAPTER_QUESTIONS_PATH = "data/questions.json";
     private static final String LEGACY_EXAM_QUESTIONS_PATH = "data/exam_questions.json";
-    private static final String EXAM_BANKS_MANIFEST_PATH = "data/exam_banks.json";
+    private static final String EXAM_BANKS_MANIFEST_PATH = "data/banks.json";
     private static final String DEFAULT_EXAM_BANK_ID = "exam-default";
 
     private List<Question> chapterQuestions;

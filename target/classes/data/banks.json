@@ -1,0 +1,34 @@
+[
+  {
+    "id": "dagong-2023",
+    "name": "大工2023开发区毛概机考题库",
+    "source": "dagong-2023-kaifaqu-maogai-jikao.json",
+    "path": "data/exam_banks/dagong-2023-kaifaqu-maogai-jikao.json",
+    "description": "大连理工大学2023年开发区校区毛概机考题库（60题）"
+  },
+  {
+    "id": "dagong-maogai-jifang-2023",
+    "name": "大工毛概机房模拟题截图版",
+    "source": "大工毛概机房模拟题截图版.json",
+    "path": "data/exam_banks/大工毛概机房模拟题截图版.json",
+    "description": "大连理工大学毛概机房模拟题截图版"
+  },{
+    "id": "dagong-maogai-jifang",
+    "name": "毛概救命版",
+    "source": "毛概复习纲要课后习题版.json",
+    "path": "data/exam_banks/毛概复习纲要课后习题版.json",
+    "description": "毛概救命版"
+  },{
+    "id": "dagong-maogai-jifang-2023",
+    "name": "毛概试卷1",
+    "source": "毛概试卷1.json",
+    "path": "data/exam_banks/毛概试卷1.json",
+    "description": "大连理工大学毛概试卷1"
+  },{
+    "id": "dagong-maogai-jifang-2023",
+    "name": "毛概试卷2",
+    "source": "毛概试卷2.json",
+    "path": "data/exam_banks/毛概试卷2.json",
+    "description": "大连理工大学毛概试卷2"
+  }
+]

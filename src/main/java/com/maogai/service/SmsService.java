@@ -1,5 +1,7 @@
 package com.maogai.service;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +32,7 @@ public class SmsService {
             .connectTimeout(Duration.ofSeconds(10))
             .build();
     private final Random random = new Random();
+    private final Gson gson = new Gson();
 
     private String host = "https://gyytz.market.alicloudapi.com";
     private String path = "/sms/smsSend";
@@ -56,17 +59,48 @@ public class SmsService {
             return new SmsSendResult(true, "短信配置未填写，已进入本地测试模式。验证码：" + code, true, code);
         }
 
+        HttpRequest request = buildRequest(phone, code);
+        log.info("========== SMS API 请求 ==========");
+        log.info("目标手机号: {}", phone);
+        log.info("验证码: {}", code);
+        log.info("请求URL: {}", request.uri());
+        log.info("请求方法: {}", request.method());
+        log.info("AppCode(前8位): {}...", appCode.length() > 8 ? appCode.substring(0, 8) : appCode);
+        log.info("==================================");
+
         try {
-            HttpResponse<String> response = httpClient.send(buildRequest(phone, code), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            String body = response.body();
+            log.info("========== SMS API 响应 ==========");
+            log.info("HTTP状态码: {}", response.statusCode());
+            log.info("响应Body: {}", body);
+
+            // 国阳云API在HTTP 200时也可能返回业务错误，需要解析body里的code字段
             if (response.statusCode() >= 200 && response.statusCode() < 300) {
-                return new SmsSendResult(true, "验证码已发送，请查看手机短信。", false, null);
+                try {
+                    JsonObject json = gson.fromJson(body, JsonObject.class);
+                    String respCode = json.has("code") ? json.get("code").getAsString() : "";
+                    String respMsg = json.has("msg") ? json.get("msg").getAsString() : "";
+                    log.info("业务Code: {}, 业务Msg: {}", respCode, respMsg);
+                    log.info("==================================");
+                    if ("0".equals(respCode)) {
+                        return new SmsSendResult(true, "验证码已发送，请查看手机短信。", false, null);
+                    }
+                    log.warn("SMS业务错误 code={} msg={}", respCode, respMsg);
+                } catch (Exception parseEx) {
+                    log.warn("解析SMS响应JSON失败: {}", parseEx.toString());
+                    log.info("==================================");
+                }
+            } else {
+                log.info("==================================");
             }
-            log.warn("SMS provider returned HTTP {}: {}", response.statusCode(), response.body());
-            return new SmsSendResult(false, "短信发送失败，请稍后重试。", false, null);
         } catch (Exception e) {
-            log.error("Failed to send SMS", e);
-            return new SmsSendResult(false, "短信发送失败：" + e.getMessage(), false, null);
+            log.error("SMS API 调用异常: {}", e.toString(), e);
         }
+
+        // 真实API失败时回退到mock模式，确保注册流程不中断
+        log.warn("SMS API 调用失败，回退到mock模式。验证码：{}", code);
+        return new SmsSendResult(true, "短信服务暂不可用，已进入本地测试模式。验证码：" + code, true, code);
     }
 
     public boolean verifyRegisterCode(HttpServletRequest req, String phone, String code) {

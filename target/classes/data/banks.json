@@ -54,5 +54,11 @@
     "source": "毛概选择题.json",
     "path": "data/exam_banks/毛概选择题.json",
     "description": "大连理工大学毛概选择题"
+  },{
+    "id": "dagong-maogai-jifang-2023",
+    "name": "毛概题库新",
+    "source": "questions.json",
+    "path": "data/exam_banks/questions.json",
+    "description": "大连理工大学毛概题库新"
   }
 ]
